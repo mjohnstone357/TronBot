@@ -26,7 +26,7 @@ object Player {
       // Pure stuff
       val availableMoves: Set[Move] = gameGrid.getAvailableMoves(myPlayerNumber)
 
-      // TODO Create a method to compute the difference in distance between the
+      // TODO Create a method to compute the difference in distance between us and our opponents
 
       // TODO Figure out which move gives the best score
 
