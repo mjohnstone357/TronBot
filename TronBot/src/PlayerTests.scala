@@ -151,6 +151,17 @@ class PlayerTests extends FlatSpec with Matchers {
     grid.rendered should be (resultantGrid)
   }
 
+  it should "parse a grid, then render the same string as was passed in" in {
+    val inputGrid =
+      """ 1  2  3
+        | 4  5  6
+        | 7  8  9""".stripMargin
+
+    val grid = new GameGrid(inputGrid)
+
+    grid.rendered should be (inputGrid)
+  }
+
 }
 
 

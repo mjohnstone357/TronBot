@@ -64,12 +64,19 @@ object Player {
 class TurnInfo()
 
 // Try to hide use of Ints
-class GameGrid(width: Int, height: Int) {
+class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
 
-  private val EmptySpaceNumber = -1
+
   private val playerLocations: Map[Int, Coordinate] = Map[Int, Coordinate]()
 
-  val array = Array.fill(width, height)(EmptySpaceNumber)
+  def this(width: Int, height: Int) = {
+    this(width, height, Array.fill(width, height)(GameGrid.EmptySpaceNumber))
+  }
+
+  def this(s: String) = {
+    this(GameGrid.getDimensions(s)._1, GameGrid.getDimensions(s)._2, GameGrid.arrayFromParsing(s))
+
+  }
 
   /**
    * Update the grid using the player information yielded for the latest turn.
@@ -90,7 +97,7 @@ class GameGrid(width: Int, height: Int) {
     for(i <- 0 until width; j <- 0 until height) {
       val cell: Int = array(i)(j)
       if (cell == playerNumber) {
-        array(i)(j) = EmptySpaceNumber
+        array(i)(j) = GameGrid.EmptySpaceNumber
       }
     }
   }
@@ -114,7 +121,7 @@ class GameGrid(width: Int, height: Int) {
       val (x, y) = (coordinate.x, coordinate.y)
       x < width && x >= 0 &&
       y < height && y >= 0 &&
-      array(x)(y) == EmptySpaceNumber
+      array(x)(y) == GameGrid.EmptySpaceNumber
     }
 
     def moveIsAvailable(move: Move): Boolean = {
@@ -126,6 +133,34 @@ class GameGrid(width: Int, height: Int) {
 
   }
 
+}
+
+object GameGrid {
+  val EmptySpaceNumber = -1
+
+  def makeRow(rowString: String): Array[Int] = {
+    val cells: Array[String] = for (cell <- rowString.split(" ") if !cell.isEmpty) yield cell
+    for (cell <- cells.reverse) yield cell.toInt
+  }
+
+  def getDimensions(s: String): (Int, Int) = {
+    val lines: List[String] = s.lines.toList
+    val firstLine: String = lines.head
+    val row: Array[String] = for (cell <- firstLine.split(" ") if !cell.isEmpty) yield cell
+
+    val h = lines.size
+    val w = row.size
+    (w, h)
+  }
+
+  def arrayFromParsing(s: String) = {
+    (for (line <- s.lines.toList) yield makeRow(line)).reverse.toArray
+  }
+
+}
+
+class DistanceFinder(arr: Array[Array[Int]]) {
+  private val array = arr.clone()
 }
 
 sealed case class Coordinate(x: Int, y: Int) {
