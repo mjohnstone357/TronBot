@@ -162,6 +162,26 @@ class PlayerTests extends FlatSpec with Matchers {
     grid.rendered should be (inputGrid)
   }
 
+  "The DistanceFinder" should "compute the distance to each point on an empty input grid, starting from the middle" in {
+    val inputGrid =
+      """-1 -1 -1
+        |-1 -1 -1
+        |-1 -1 -1""".stripMargin
+
+    val outputGrid =
+      """ 2  1  2
+        | 1  0  1
+        | 2  1  2""".stripMargin
+
+    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
+    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(1,1))
+
+    ArrayUtils.render(distanceGrid) should be (outputGrid)
+
+  }
+
 }
 
 

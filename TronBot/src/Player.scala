@@ -1,5 +1,6 @@
+import java.util
+import scala.collection.mutable
 import scala.io.Source
-import scala.collection.mutable.Map
 
 object Player {
 
@@ -66,15 +67,14 @@ class TurnInfo()
 // Try to hide use of Ints
 class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
 
-
-  private val playerLocations: Map[Int, Coordinate] = Map[Int, Coordinate]()
+  private val playerLocations = mutable.Map[Int, Coordinate]()
 
   def this(width: Int, height: Int) = {
     this(width, height, Array.fill(width, height)(GameGrid.EmptySpaceNumber))
   }
 
   def this(s: String) = {
-    this(GameGrid.getDimensions(s)._1, GameGrid.getDimensions(s)._2, GameGrid.arrayFromParsing(s))
+    this(GameGrid.getDimensions(s)._1, GameGrid.getDimensions(s)._2, ArrayUtils.arrayFromParsing(s))
 
   }
 
@@ -103,14 +103,7 @@ class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
   }
 
   def rendered: String = {
-
-    def padInt(x: Int) = {
-      val string: String = x.toString
-      if (string.length == 1) " " + string else string
-    }
-    val paddedCells: Array[Array[String]] = for (row <- array) yield for (cell <- row.reverse) yield padInt(cell)
-    
-    (for (row <- paddedCells) yield row.mkString(" ")).reverse.mkString("\n")
+    ArrayUtils.render(array)
   }
 
   def getAvailableMoves(playerNumber: Int): Set[Move] = {
@@ -138,11 +131,6 @@ class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
 object GameGrid {
   val EmptySpaceNumber = -1
 
-  def makeRow(rowString: String): Array[Int] = {
-    val cells: Array[String] = for (cell <- rowString.split(" ") if !cell.isEmpty) yield cell
-    for (cell <- cells.reverse) yield cell.toInt
-  }
-
   def getDimensions(s: String): (Int, Int) = {
     val lines: List[String] = s.lines.toList
     val firstLine: String = lines.head
@@ -153,14 +141,66 @@ object GameGrid {
     (w, h)
   }
 
-  def arrayFromParsing(s: String) = {
-    (for (line <- s.lines.toList) yield makeRow(line)).reverse.toArray
-  }
 
 }
 
+object ArrayUtils {
+  def render(array: Array[Array[Int]]) : String = {
+
+    def padInt(x: Int) = {
+      val string: String = x.toString
+      if (string.length == 1) " " + string else string
+    }
+    val paddedCells: Array[Array[String]] = for (row <- array) yield for (cell <- row.reverse) yield padInt(cell)
+
+    (for (row <- paddedCells) yield row.mkString(" ")).reverse.mkString("\n")
+  }
+
+  def makeRow(rowString: String): Array[Int] = {
+    val cells: Array[String] = for (cell <- rowString.split(" ") if !cell.isEmpty) yield cell
+    for (cell <- cells.reverse) yield cell.toInt
+  }
+
+  def arrayFromParsing(s: String): Array[Array[Int]] = {
+    (for (line <- s.lines.toList) yield makeRow(line)).reverse.toArray
+  }
+}
+
 class DistanceFinder(arr: Array[Array[Int]]) {
-  private val array = arr.clone()
+  val array = arr.clone()
+
+  def getDistanceGridForPlayer(playerLocation: Coordinate): Array[Array[Int]] = {
+
+    val width = array.head.length
+    val height = array.length
+
+    val distanceArray: Array[Array[Int]] = Array.fill(width, height)(GameGrid.EmptySpaceNumber)
+    val coordinatesToExplore = new util.Stack[Coordinate]
+
+    distanceArray(playerLocation.x)(playerLocation.y) = 0
+    coordinatesToExplore.push(playerLocation)
+
+    while (!coordinatesToExplore.isEmpty) {
+      val next = coordinatesToExplore.pop()
+
+      val adjacents = for(candidate <- next.getAdjacents() if candidate.isWithin(width, height)) yield candidate
+      val distances = for (adjacent <- adjacents; d = distanceArray(adjacent.x)(adjacent.y) if d != GameGrid.EmptySpaceNumber) yield d
+
+      distanceArray(next.x)(next.y) = if (next == playerLocation) 0 else distances.min + 1
+
+      val cellsToExplore = for (adjacentCell <- adjacents
+                                if !coordinatesToExplore.contains(adjacentCell)
+                                if adjacentCell.isWithin(width, height) &&
+                                  distanceArray(adjacentCell.x)(adjacentCell.y) == GameGrid.EmptySpaceNumber
+      ) yield adjacentCell
+
+      for (cell <- cellsToExplore) {
+        coordinatesToExplore.add(cell)
+      }
+
+    }
+    distanceArray
+  }
 }
 
 sealed case class Coordinate(x: Int, y: Int) {
@@ -172,6 +212,20 @@ sealed case class Coordinate(x: Int, y: Int) {
       case Down() => Coordinate(x, y + 1)
     }
   }
+
+  def getAdjacents(): List[Coordinate] = {
+    List(
+      Coordinate(x - 1, y),
+      Coordinate(x + 1, y),
+      Coordinate(x, y - 1),
+      Coordinate(x, y + 1)
+    )
+  }
+
+  def isWithin(width: Int, height: Int) = {
+    x >= 0 && x < width && y >= 0 && y < height
+  }
+
 }
 
 abstract sealed class PlayerInfo()
