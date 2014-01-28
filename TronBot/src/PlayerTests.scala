@@ -62,7 +62,7 @@ class PlayerTests extends FlatSpec with Matchers {
    1
    2
   */
-  "The agent" should "consider consider only the directly (not diagonally) adjacent cells, and not the walls, " +
+  "The agent" should "consider only the directly (not diagonally) adjacent cells, and not the walls, " +
     "when the game grid is 3x3 and it is in the top left corner" in {
     val grid = new GameGrid(3, 3)
     val playerNumber = 0
