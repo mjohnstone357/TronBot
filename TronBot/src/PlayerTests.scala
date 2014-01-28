@@ -230,6 +230,26 @@ class PlayerTests extends FlatSpec with Matchers {
 
   }
 
+  it should "work with non-square grids" in {
+    val inputGrid =
+      """-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1""".stripMargin
+
+    val outputGrid =
+      """ 1  2  3  4  5
+        | 0  1  2  3  4
+        | 1  2  3  4  5""".stripMargin
+
+    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
+    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,1))
+
+    ArrayUtils.render(distanceGrid) should be (outputGrid)
+
+  }
+
 }
 
 

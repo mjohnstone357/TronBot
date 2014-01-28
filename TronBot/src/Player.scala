@@ -176,7 +176,7 @@ class DistanceFinder(arr: Array[Array[Int]]) {
     val width = array.head.length
     val height = array.length
 
-    val distanceArray: Array[Array[Int]] = Array.fill(width, height)(GameGrid.EmptySpaceNumber)
+    val distanceArray: Array[Array[Int]] = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
     val coordinatesToExplore = ArrayBuffer[Coordinate]()
 
     distanceArray(playerLocation.y)(playerLocation.x) = 0
