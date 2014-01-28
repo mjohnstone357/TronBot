@@ -1,5 +1,5 @@
-import java.util
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 object Player {
@@ -87,7 +87,7 @@ class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
       info match {
         case PlayerLocation(playerNumber, Coordinate(x,y), _) =>
           playerLocations(playerNumber) = Coordinate(x,y)
-          array(x)(y) = playerNumber
+          array(y)(x) = playerNumber
         case PlayerDead(playerNumber) => purgePlayer(playerNumber)
       }
     }
@@ -151,18 +151,20 @@ object ArrayUtils {
       val string: String = x.toString
       if (string.length == 1) " " + string else string
     }
-    val paddedCells: Array[Array[String]] = for (row <- array) yield for (cell <- row.reverse) yield padInt(cell)
+    val paddedCells: Array[Array[String]] = for (row <- array) yield for (cell <- row) yield padInt(cell)
 
-    (for (row <- paddedCells) yield row.mkString(" ")).reverse.mkString("\n")
+    (for (row <- paddedCells) yield row.mkString(" ")).mkString("\n")
   }
+
+  def get(array: Array[Array[Int]], x: Int, y: Int) = array(y)(x)
 
   def makeRow(rowString: String): Array[Int] = {
     val cells: Array[String] = for (cell <- rowString.split(" ") if !cell.isEmpty) yield cell
-    for (cell <- cells.reverse) yield cell.toInt
+    for (cell <- cells) yield cell.toInt
   }
 
   def arrayFromParsing(s: String): Array[Array[Int]] = {
-    (for (line <- s.lines.toList) yield makeRow(line)).reverse.toArray
+    (for (line <- s.lines.toList) yield makeRow(line)).toArray
   }
 }
 
@@ -175,27 +177,31 @@ class DistanceFinder(arr: Array[Array[Int]]) {
     val height = array.length
 
     val distanceArray: Array[Array[Int]] = Array.fill(width, height)(GameGrid.EmptySpaceNumber)
-    val coordinatesToExplore = new util.Stack[Coordinate]
+    val coordinatesToExplore = ArrayBuffer[Coordinate]()
 
-    distanceArray(playerLocation.x)(playerLocation.y) = 0
-    coordinatesToExplore.push(playerLocation)
+    distanceArray(playerLocation.y)(playerLocation.x) = 0
+    coordinatesToExplore.prepend(playerLocation)
 
     while (!coordinatesToExplore.isEmpty) {
-      val next = coordinatesToExplore.pop()
+      val next = coordinatesToExplore.remove(0)
 
-      val adjacents = for(candidate <- next.getAdjacents() if candidate.isWithin(width, height)) yield candidate
-      val distances = for (adjacent <- adjacents; d = distanceArray(adjacent.x)(adjacent.y) if d != GameGrid.EmptySpaceNumber) yield d
+      val adjacents = for(candidate <- next.getAdjacents if candidate.isWithin(width, height)) yield candidate
+      val distances = for (adjacent <- adjacents; d = distanceArray(adjacent.y)(adjacent.x) if d != GameGrid.EmptySpaceNumber) yield d
 
-      distanceArray(next.x)(next.y) = if (next == playerLocation) 0 else distances.min + 1
+      if (next != playerLocation) {
+        val newDistance = distances.min + 1
+        distanceArray(next.y)(next.x) = newDistance
+      }
 
       val cellsToExplore = for (adjacentCell <- adjacents
                                 if !coordinatesToExplore.contains(adjacentCell)
                                 if adjacentCell.isWithin(width, height) &&
-                                  distanceArray(adjacentCell.x)(adjacentCell.y) == GameGrid.EmptySpaceNumber
+                                  adjacentCell != playerLocation &&
+                                  distanceArray(adjacentCell.y)(adjacentCell.x) == GameGrid.EmptySpaceNumber
       ) yield adjacentCell
 
       for (cell <- cellsToExplore) {
-        coordinatesToExplore.add(cell)
+        coordinatesToExplore.append(cell)
       }
 
     }
@@ -213,7 +219,7 @@ sealed case class Coordinate(x: Int, y: Int) {
     }
   }
 
-  def getAdjacents(): List[Coordinate] = {
+  def getAdjacents: List[Coordinate] = {
     List(
       Coordinate(x - 1, y),
       Coordinate(x + 1, y),

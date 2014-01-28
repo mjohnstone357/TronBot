@@ -1,4 +1,7 @@
+import java.util
 import org.scalatest._
+import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 class PlayerTests extends FlatSpec with Matchers {
@@ -151,6 +154,27 @@ class PlayerTests extends FlatSpec with Matchers {
     grid.rendered should be (resultantGrid)
   }
 
+  it should "parse a grid, creating a structure that can be indexed into using array(x)(y)" in {
+    import ArrayUtils._
+
+    val inputGrid =
+      """ 1  2  3
+        | 4  5  6
+        | 7  8  9""".stripMargin
+
+    val array: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    get(array, 0, 0) should be (1)
+    get(array, 1, 0) should be (2)
+    get(array, 2, 0) should be (3)
+    get(array, 0, 1) should be (4)
+    get(array, 1, 1) should be (5)
+    get(array, 2, 1) should be (6)
+    get(array, 0, 2) should be (7)
+    get(array, 1, 2) should be (8)
+    get(array, 2, 2) should be (9)
+  }
+
   it should "parse a grid, then render the same string as was passed in" in {
     val inputGrid =
       """ 1  2  3
@@ -177,6 +201,30 @@ class PlayerTests extends FlatSpec with Matchers {
 
     val distanceFinder: DistanceFinder = new DistanceFinder(grid)
     val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(1,1))
+
+    ArrayUtils.render(distanceGrid) should be (outputGrid)
+
+  }
+
+  it should "compute the distance to each point on a larger input grid, starting from the left side" in {
+    val inputGrid =
+      """-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1""".stripMargin
+
+    val outputGrid =
+      """ 2  3  4  5  6
+        | 1  2  3  4  5
+        | 0  1  2  3  4
+        | 1  2  3  4  5
+        | 2  3  4  5  6""".stripMargin
+
+    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
+    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
 
     ArrayUtils.render(distanceGrid) should be (outputGrid)
 
