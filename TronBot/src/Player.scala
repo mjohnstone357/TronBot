@@ -191,12 +191,14 @@ class DistanceFinder(arr: Array[Array[Int]]) {
       if (next != playerLocation) {
         val newDistance = distances.min + 1
         distanceArray(next.y)(next.x) = newDistance
+        println("Distance to ("+next.x+","+next.y+") is " + newDistance)
       }
 
       val cellsToExplore = for (adjacentCell <- adjacents
                                 if !coordinatesToExplore.contains(adjacentCell)
                                 if adjacentCell.isWithin(width, height) &&
                                   adjacentCell != playerLocation &&
+                                  array(adjacentCell.y)(adjacentCell.x) == GameGrid.EmptySpaceNumber &&
                                   distanceArray(adjacentCell.y)(adjacentCell.x) == GameGrid.EmptySpaceNumber
       ) yield adjacentCell
 

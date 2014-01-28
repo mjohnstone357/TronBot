@@ -1,7 +1,4 @@
-import java.util
 import org.scalatest._
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 class PlayerTests extends FlatSpec with Matchers {
@@ -248,6 +245,75 @@ class PlayerTests extends FlatSpec with Matchers {
 
     ArrayUtils.render(distanceGrid) should be (outputGrid)
 
+  }
+
+  it should "find distances around obstacles" in {
+    val inputGrid =
+      """-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1
+        |-1 -1  1 -1 -1
+        |-1 -1  2 -1 -1
+        |-1 -1  3 -1 -1""".stripMargin
+
+    val outputGrid =
+      """ 2  3  4  5  6
+        | 1  2  3  4  5
+        | 0  1 -1  5  6
+        | 1  2 -1  6  7
+        | 2  3 -1  7  8""".stripMargin
+
+    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
+    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
+
+    ArrayUtils.render(distanceGrid) should be (outputGrid)
+  }
+
+  it should "find distances around obstacles where there is a single-cell bottleneck" in {
+    val inputGrid =
+      """-1 -1 -1 -1 -1
+        |-1 -1  0 -1 -1
+        |-1 -1  1 -1 -1
+        |-1 -1  2 -1 -1
+        |-1 -1  3 -1 -1""".stripMargin
+
+    val outputGrid =
+      """ 2  3  4  5  6
+        | 1  2 -1  6  7
+        | 0  1 -1  7  8
+        | 1  2 -1  8  9
+        | 2  3 -1  9 10""".stripMargin
+
+    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
+    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
+
+    ArrayUtils.render(distanceGrid) should be (outputGrid)
+  }
+
+  it should "find distances around obstacles where are two paths and one is shorter" in {
+    val inputGrid =
+      """-1 -1 -1 -1 -1
+        |-1 -1  0 -1 -1
+        |-1 -1  1 -1 -1
+        |-1 -1  2 -1 -1
+        |-1 -1 -1 -1 -1""".stripMargin
+
+    val outputGrid =
+      """ 2  3  4  5  6
+        | 1  2 -1  6  7
+        | 0  1 -1  7  8
+        | 1  2 -1  6  7
+        | 2  3  4  5  6""".stripMargin
+
+    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
+    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
+
+    ArrayUtils.render(distanceGrid) should be (outputGrid)
   }
 
 }
