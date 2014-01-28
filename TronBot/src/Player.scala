@@ -26,6 +26,10 @@ object Player {
       // Pure stuff
       val availableMoves: Set[Move] = gameGrid.getAvailableMoves(myPlayerNumber)
 
+      // TODO Create a method to compute the difference in distance between the
+
+      // TODO Figure out which move gives the best score
+
       // Impure output stuff
 
       if (availableMoves.isEmpty) {
@@ -191,7 +195,6 @@ class DistanceFinder(arr: Array[Array[Int]]) {
       if (next != playerLocation) {
         val newDistance = distances.min + 1
         distanceArray(next.y)(next.x) = newDistance
-        println("Distance to ("+next.x+","+next.y+") is " + newDistance)
       }
 
       val cellsToExplore = for (adjacentCell <- adjacents
