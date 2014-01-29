@@ -18,25 +18,42 @@ object Player {
       val turnInput: List[String] = readOneTurn(Source.stdin)
 
       val myPlayerNumber = turnInput.head.split(" ")(1).toInt
-      
+
       val playerInfosThisTurn: List[PlayerInfo] = PlayerInfo.getPlayerInformation(turnInput)
       gameGrid.update(playerInfosThisTurn)
 
 
       // Pure stuff
+
+      val turn = playerInfosThisTurn(myPlayerNumber)
+
+      val myLocation = turn match {
+        case PlayerLocation(_, location, _) => location
+        case _ => sys.error("I seem to be dead.")
+      }
+
       val availableMoves: Set[Move] = gameGrid.getAvailableMoves(myPlayerNumber)
 
-      // TODO Create a method to compute the difference in distance between us and our opponents
-
-      // TODO Figure out which move gives the best score
-
-      // Impure output stuff
-
       if (availableMoves.isEmpty) {
-        debug("Got trapped :(")
+        println("I seem to have got trapped :(")
       } else {
-        writeMove(availableMoves.head)
+        // For now, just see which move provides us with the best score
+        val distanceFinder = new DistanceFinder(gameGrid.array)
+
+        // For each available move, compute the score
+        val moveScores: Set[(Move, Int)] = for (move <- availableMoves) yield (move, distanceFinder.getNumberOfReachableCells(myLocation.applyMove(move)))
+
+        val maxScore = (for ((_, score) <- moveScores) yield score).max
+        val bestMoves: Set[Move] = for ((move, score) <- moveScores if score == maxScore) yield move
+
+        val chosenMove = bestMoves.head
+
+        // Impure output stuff
+
+        writeMove(chosenMove)
       }
+
+
     }
   }
 
@@ -69,12 +86,14 @@ object Player {
 class TurnInfo()
 
 // Try to hide use of Ints
-class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
+class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
+
+  val array = arr
 
   private val playerLocations = mutable.Map[Int, Coordinate]()
 
   def this(width: Int, height: Int) = {
-    this(width, height, Array.fill(width, height)(GameGrid.EmptySpaceNumber))
+    this(width, height, Array.fill(height, width)(GameGrid.EmptySpaceNumber))
   }
 
   def this(s: String) = {
@@ -87,6 +106,10 @@ class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
    * @param playerInformation information indicating the location / announcing the death of each player
    */
   def update(playerInformation: List[PlayerInfo]) {
+
+    assert(array.head.length == width)
+    assert(array.length == height)
+
     for(info <- playerInformation) {
       info match {
         case PlayerLocation(playerNumber, Coordinate(x,y), _) =>
@@ -117,8 +140,8 @@ class GameGrid(width: Int, height: Int, array: Array[Array[Int]]) {
     def cellIsValid(coordinate: Coordinate): Boolean = {
       val (x, y) = (coordinate.x, coordinate.y)
       x < width && x >= 0 &&
-      y < height && y >= 0 &&
-      array(x)(y) == GameGrid.EmptySpaceNumber
+        y < height && y >= 0 &&
+        array(y)(x) == GameGrid.EmptySpaceNumber
     }
 
     def moveIsAvailable(move: Move): Boolean = {
@@ -211,6 +234,21 @@ class DistanceFinder(arr: Array[Array[Int]]) {
 
     }
     distanceArray
+  }
+
+  def getNumberOfReachableCells(playerLocation: Coordinate): Int = {
+    val distanceGrid = getDistanceGridForPlayer(playerLocation)
+
+    var counter = 0
+    // TODO Make less imperative
+    for(array <- distanceGrid) {
+      for (cell <- array) {
+        if (cell != GameGrid.EmptySpaceNumber) {
+          counter += 1
+        }
+      }
+    }
+    counter
   }
 }
 
