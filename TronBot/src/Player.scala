@@ -122,9 +122,9 @@ class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
 
   def purgePlayer(playerNumber: Int): Unit = {
     for(i <- 0 until width; j <- 0 until height) {
-      val cell: Int = array(i)(j)
+      val cell: Int = array(j)(i)
       if (cell == playerNumber) {
-        array(i)(j) = GameGrid.EmptySpaceNumber
+        array(j)(i) = GameGrid.EmptySpaceNumber
       }
     }
   }
