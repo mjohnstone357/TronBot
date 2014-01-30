@@ -1,5 +1,6 @@
 import org.scalatest._
 import scala.io.Source
+import ArrayUtils._
 
 class PlayerTests extends FlatSpec with Matchers {
 
@@ -194,7 +195,7 @@ class PlayerTests extends FlatSpec with Matchers {
         | 1  0  1
         | 2  1  2""".stripMargin
 
-    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
     val distanceFinder: DistanceFinder = new DistanceFinder(grid)
     val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(1,1))
@@ -218,7 +219,7 @@ class PlayerTests extends FlatSpec with Matchers {
         | 1  2  3  4  5
         | 2  3  4  5  6""".stripMargin
 
-    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
     val distanceFinder: DistanceFinder = new DistanceFinder(grid)
     val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
@@ -238,7 +239,7 @@ class PlayerTests extends FlatSpec with Matchers {
         | 0  1  2  3  4
         | 1  2  3  4  5""".stripMargin
 
-    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
     val distanceFinder: DistanceFinder = new DistanceFinder(grid)
     val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,1))
@@ -262,7 +263,7 @@ class PlayerTests extends FlatSpec with Matchers {
         | 1  2 -1  6  7
         | 2  3 -1  7  8""".stripMargin
 
-    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
     val distanceFinder: DistanceFinder = new DistanceFinder(grid)
     val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
@@ -285,7 +286,7 @@ class PlayerTests extends FlatSpec with Matchers {
         | 1  2 -1  8  9
         | 2  3 -1  9 10""".stripMargin
 
-    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
     val distanceFinder: DistanceFinder = new DistanceFinder(grid)
     val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
@@ -308,7 +309,7 @@ class PlayerTests extends FlatSpec with Matchers {
         | 1  2 -1  6  7
         | 2  3  4  5  6""".stripMargin
 
-    val grid: Array[Array[Int]] = ArrayUtils.arrayFromParsing(inputGrid)
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
     val distanceFinder: DistanceFinder = new DistanceFinder(grid)
     val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
@@ -316,6 +317,71 @@ class PlayerTests extends FlatSpec with Matchers {
     ArrayUtils.render(distanceGrid) should be (outputGrid)
   }
 
+  "The move analyser" should "return a map including all four moves when the player is in the middle of the grid" in {
+    val inputGrid = """-1 -1 -1
+                      |-1  0 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = grid,
+      playerLocationMap = Map(0 -> Coordinate(1, 1)),
+      currentPlayer = 0)
+
+    goodnessMap.keySet should be (Move.AllMoves)
+  }
+
+  it should "return a map including the two legal moves when the player is in a corner of the grid" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = grid,
+      playerLocationMap = Map(0 -> Coordinate(0, 0)),
+      currentPlayer = 0)
+
+    goodnessMap.keySet should be (Set(Right(), Down()))
+  }
+
+  it should "find a move which immediately traps the player to be less desirable than one which does not" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1  3 -1
+                      | 3  3 -1""".stripMargin
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = arrayFromParsing(inputGrid),
+      playerLocationMap = Map(0 -> Coordinate(0, 0)),
+      currentPlayer = 0)
+
+    goodnessMap.keySet should be (Set(Right(), Down()))
+    val downGoodness: Int = goodnessMap(Down())
+    val rightGoodness: Int = goodnessMap(Right())
+
+    downGoodness should be < rightGoodness
+  }
+
+  it should "find a move which cuts off a section of grid on the following move to be less desirable than one that does not" in {
+    val inputGrid =
+      """-1 -1 -1  0 -1
+        |-1 -1 -1  0 -1
+        |-1 -1 -1  0 -1
+        |-1 -1 -1  0 -1
+        |-1 -1 -1 -1 -1""".stripMargin
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = arrayFromParsing(inputGrid),
+      playerLocationMap = Map(0 -> Coordinate(3, 3)),
+      currentPlayer = 0)
+
+    goodnessMap.keySet should be (Set(Left(), Right(), Down()))
+    val downGoodness: Int = goodnessMap(Down())
+    val leftGoodness: Int = goodnessMap(Left())
+
+    downGoodness should be < leftGoodness
+  }
+
 }
-
-

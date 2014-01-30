@@ -85,9 +85,41 @@ object Player {
   }
 }
 
+object MoveAnalyser {
+
+  /**
+   * Estimate the utility of each move. Only legal moves are returned.
+   * @param playerArray a 2D array organised as a list of rows, in which each cell contains either a player number or
+   *                    GameGrid.EmptySpaceNumber if the cell contains empty space
+   * @param playerLocationMap the location of each player in the array, a cell at coordinate (X,Y) can be access with
+   *                          playerArray(y)(x)
+   * @param currentPlayer the number of the player whose moves we are considering
+   * @return a map from each legal move to an integer estimate of its utility to the currentPlayer
+   */
+  def determineMoveGoodness(playerArray: Array[Array[Int]], playerLocationMap: Map[Int, Coordinate],
+                            currentPlayer: Int): Map[Move, Int] = {
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(playerArray)
+
+    val width = playerArray.head.length
+    val height = playerArray.length
+
+    val playerLocation = playerLocationMap(currentPlayer)
+
+    val legalMoves = for (move <- Move.AllMoves;
+      resultantLocation = playerLocation.applyMove(move)
+      if resultantLocation.isWithin(width, height) && playerArray(resultantLocation.y)(resultantLocation.x) == GameGrid.EmptySpaceNumber
+    ) yield move
+
+    val moveScores = for (move <- legalMoves) yield move -> distanceFinder.getNumberOfReachableCells(playerLocation.applyMove(move))
+
+    moveScores.toMap
+  }
+
+}
+
 class TurnInfo()
 
-// Try to hide use of Ints
 class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
 
   val array = arr
