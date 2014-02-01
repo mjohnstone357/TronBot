@@ -43,8 +43,6 @@ object Player {
         // For each available move, compute the score
         val moveScores: Set[(Move, Int)] = for (move <- availableMoves) yield (move, distanceFinder.getNumberOfReachableCells(myLocation.applyMove(move)))
 
-        // TODO Find the opponents' distances and try to reduce their scores...
-
         val maxScore = (for ((_, score) <- moveScores) yield score).max
         val bestMoves: Set[Move] = for ((move, score) <- moveScores if score == maxScore) yield move
 
