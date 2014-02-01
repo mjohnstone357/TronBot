@@ -453,6 +453,35 @@ class PlayerTests extends FlatSpec with Matchers {
     scores should be (Map(0 -> 2, 2 -> 2))
   }
 
+  it should "not have silly bug" in {
+    val inputGrid = """ 0 -1 -1
+                      | 0  0 -1
+                      | 3  0 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val raceGrid: Array[Array[Int]] = GridRacer.makeRaceGrid(grid, Map(0 -> Coordinate(1, 2), 3 -> Coordinate(0, 2)))
+
+    val outputGrid =
+      """-1  0  0
+        |-1 -1  0
+        |-1 -1  0""".stripMargin
+
+    ArrayUtils.render(raceGrid) should be (outputGrid)
+  }
+
+  it should "indicate that player 0 can reach 4 cells first, as player 3 is trapped" in {
+    val inputGrid = """ 0 -1 -1
+                      | 0  0 -1
+                      | 3  0 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val scores: Map[Int, Int] = GridRacer.getPlayerScores(grid, Map(0 -> Coordinate(1, 2), 3 -> Coordinate(0, 2)))
+
+    scores should be (Map(0 -> 4, 2 -> 0))
+  }
+
   "The move sequencer" should "return the starting position when applying an empty list of moves" in {
     val inputGrid = """ 0 -1 -1
                       |-1 -1 -1

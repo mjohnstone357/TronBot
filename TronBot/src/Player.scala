@@ -131,14 +131,21 @@ object MoveAnalyser {
 
     val opponents: Set[Int] = playerLocationMap.keySet - currentPlayer
 
+    val megaMap: Map[Move, Map[Int, Int]] = (for (move <- legalMoves) yield move -> GridRacer.getPlayerScores(moveResultantArrays(move),
+      playerLocationMap + (currentPlayer -> playerLocation.applyMove(move)))).toMap
+
     val opponentUtilities: Map[Move, Int] =
       (for (move <- legalMoves;
-           utilityToOpponents: Int = (for (opponent <- opponents)
-           yield new DistanceFinder(moveResultantArrays(move)).getNumberOfReachableCells(playerLocationMap(opponent))).sum)
+           playerRacingScores: Map[Int, Int] = GridRacer.getPlayerScores(moveResultantArrays(move),
+             playerLocationMap + (currentPlayer -> playerLocation.applyMove(move)));
+           utilityToOpponents: Int = (for (opponent <- opponents) yield playerRacingScores(opponent)).sum)
     yield move -> utilityToOpponents).toMap
 
-    val myUtility: Map[Move, Int] = (for (move <- legalMoves)
-      yield move -> new DistanceFinder(moveResultantArrays(move)).getNumberOfReachableCells(playerLocation.applyMove(move))).toMap
+    val myUtility: Map[Move, Int] =
+      (for (move <- legalMoves;
+            playerRacingScores: Map[Int, Int] = GridRacer.getPlayerScores(moveResultantArrays(move),
+              playerLocationMap + (currentPlayer -> playerLocation.applyMove(move))))
+      yield move -> playerRacingScores(currentPlayer)).toMap
 
     (for (move <- legalMoves) yield move -> (myUtility(move) - opponentUtilities(move))).toMap
   }
