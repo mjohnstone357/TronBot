@@ -145,6 +145,73 @@ object MoveAnalyser {
 
 }
 
+object GridRacer {
+
+  def makeRaceGrid(playerArray: Array[Array[Int]], playerLocations: Map[Int, Coordinate]): Array[Array[Int]] = {
+
+    val width = playerArray.head.length
+    val height = playerArray.length
+
+    val distanceFinder: DistanceFinder = new DistanceFinder(playerArray)
+
+    val outputGrid = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
+
+    val distanceGrids: Map[Int, Array[Array[Int]]] =
+      (for (player <- playerLocations.keySet;
+            playerLocation = playerLocations(player)) yield player -> distanceFinder.getDistanceGridForPlayer(playerLocation)).toMap
+
+
+    for (y <- 0 until height; x <- 0 until width) {
+
+      val distanceOfClosestPlayer: Int =
+        (for (player <- playerLocations.keySet) yield distanceGrids(player)(y)(x)).min
+
+      val result =
+        if (distanceOfClosestPlayer == GameGrid.EmptySpaceNumber) {
+          GameGrid.EmptySpaceNumber
+        } else {
+          val playersAtMinimumDistance: Set[Int] =
+            for (player <- playerLocations.keySet if distanceGrids(player)(y)(x) == distanceOfClosestPlayer) yield player
+
+          if (playersAtMinimumDistance.size == 1) {
+            playersAtMinimumDistance.head
+          } else {
+            // A tie
+            GameGrid.EmptySpaceNumber
+          }
+        }
+
+      outputGrid(y)(x) = result
+
+    }
+
+    outputGrid
+
+  }
+
+  def getPlayerScores(playerArray: Array[Array[Int]], playerLocations: Map[Int, Coordinate]): Map[Int, Int] = {
+
+    val raceGrid: Array[Array[Int]] = makeRaceGrid(playerArray, playerLocations)
+
+    def countInstances(playerNumber: Int): Int = {
+
+      val width = playerArray.head.length
+      val height = playerArray.length
+
+      var counter = 0
+
+      for (y <- 0 until height; x <- 0 until width) {
+        if (raceGrid(y)(x) == playerNumber) {
+          counter += 1
+        }
+      }
+    counter
+    }
+
+    (for (player <- playerLocations.keySet) yield player -> countInstances(player)).toMap
+  }
+}
+
 class TurnInfo()
 
 class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
