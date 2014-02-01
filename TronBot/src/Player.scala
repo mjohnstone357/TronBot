@@ -99,8 +99,6 @@ object MoveAnalyser {
   def determineMoveGoodness(playerArray: Array[Array[Int]], playerLocationMap: Map[Int, Coordinate],
                             currentPlayer: Int): Map[Move, Int] = {
 
-    val distanceFinder: DistanceFinder = new DistanceFinder(playerArray)
-
     val width = playerArray.head.length
     val height = playerArray.length
 
@@ -111,9 +109,33 @@ object MoveAnalyser {
       if resultantLocation.isWithin(width, height) && playerArray(resultantLocation.y)(resultantLocation.x) == GameGrid.EmptySpaceNumber
     ) yield move
 
-    val moveScores = for (move <- legalMoves) yield move -> distanceFinder.getNumberOfReachableCells(playerLocation.applyMove(move))
 
-    moveScores.toMap
+    val moveOutcomes: Map[Move, MoveSequenceOutcome] =
+      (for (move <- legalMoves) yield move -> MoveSequencer.computeSequenceResult(playerArray, playerLocation, List(move))).toMap
+
+    val moveResultantArrays =
+      (for (move <- legalMoves;
+            outcome = moveOutcomes(move)) yield move ->
+        (
+          outcome match {
+            case EndedUpAtLocation(_, resultantArray) => resultantArray
+            case _ => sys.error("An illegal move was made.")
+          }
+        )).toMap
+
+
+    val opponents: Set[Int] = playerLocationMap.keySet - currentPlayer
+
+    val opponentUtilities: Map[Move, Int] =
+      (for (move <- legalMoves;
+           utilityToOpponents: Int = (for (opponent <- opponents)
+           yield new DistanceFinder(moveResultantArrays(move)).getNumberOfReachableCells(playerLocationMap(opponent))).sum)
+    yield move -> utilityToOpponents).toMap
+
+    val myUtility: Map[Move, Int] = (for (move <- legalMoves)
+      yield move -> new DistanceFinder(moveResultantArrays(move)).getNumberOfReachableCells(playerLocation.applyMove(move))).toMap
+
+    (for (move <- legalMoves) yield move -> (myUtility(move) - opponentUtilities(move))).toMap
   }
 
 }
@@ -189,6 +211,57 @@ class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
 
 }
 
+abstract class MoveSequenceOutcome()
+
+object MoveSequenceOutcome {
+  def allMovesIllegal(outcomes: List[MoveSequenceOutcome]): Boolean = {
+    for (outcome <- outcomes) {
+      outcome match {
+        case PerformedIllegalMove() => ()
+        case _ => return false
+      }
+    }
+    true
+  }
+}
+
+sealed case class PerformedIllegalMove() extends MoveSequenceOutcome
+sealed case class EndedUpAtLocation(location: Coordinate, resultantArray: Array[Array[Int]]) extends MoveSequenceOutcome
+
+object MoveSequencer {
+
+  import ArrayUtils._
+
+  val ArbitraryPlayerNumber: Int = 0
+
+  def computeSequenceResult(playerArray: Array[Array[Int]], startingLocation: Coordinate,
+                            moveSequence: List[Move]): MoveSequenceOutcome = {
+
+    val width = playerArray.head.length
+    val height = playerArray.length
+
+    val simulationArray: Array[Array[Int]] = for (cells <- playerArray) yield cells.clone()
+    var currentLocation = startingLocation
+
+    simulationArray(startingLocation.y)(startingLocation.x) = ArbitraryPlayerNumber
+
+    for (move <- moveSequence) {
+      currentLocation = currentLocation.applyMove(move)
+
+      if (!currentLocation.isWithin(width, height) ||
+        get(simulationArray, currentLocation) != GameGrid.EmptySpaceNumber) {
+        return PerformedIllegalMove()
+      }
+
+      set(simulationArray, currentLocation, ArbitraryPlayerNumber)
+
+    }
+
+    EndedUpAtLocation(currentLocation, simulationArray)
+  }
+
+}
+
 object GameGrid {
   val EmptySpaceNumber = -1
 
@@ -218,6 +291,14 @@ object ArrayUtils {
   }
 
   def get(array: Array[Array[Int]], x: Int, y: Int) = array(y)(x)
+
+  def get(array: Array[Array[Int]], coordinate: Coordinate) = {
+    array(coordinate.y)(coordinate.x)
+  }
+
+  def set(array: Array[Array[Int]], coordinate: Coordinate, value: Int) = {
+    array(coordinate.y)(coordinate.x) = value
+  }
 
   def makeRow(rowString: String): Array[Int] = {
     val cells: Array[String] = for (cell <- rowString.split(" ") if !cell.isEmpty) yield cell

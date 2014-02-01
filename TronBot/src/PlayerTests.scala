@@ -364,6 +364,22 @@ class PlayerTests extends FlatSpec with Matchers {
     downGoodness should be < rightGoodness
   }
 
+  it should "find a move which traps an opponent to be more desirable than one which does not" in {
+    val inputGrid = """ 0 -1 -1
+                      | 0  0 -1
+                      | 3 -1 -1""".stripMargin
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = arrayFromParsing(inputGrid),
+      playerLocationMap = Map(0 -> Coordinate(1, 1), 3 -> Coordinate(0, 2)),
+      currentPlayer = 0)
+
+    goodnessMap.keySet should be (Set(Up(), Right(), Down()))
+
+    goodnessMap(Down()) should be > goodnessMap(Up())
+    goodnessMap(Down()) should be > goodnessMap(Right())
+  }
+
   it should "find a move which cuts off a section of grid on the following move to be less desirable than one that does not" in {
     val inputGrid =
       """-1 -1 -1  0 -1
@@ -383,5 +399,115 @@ class PlayerTests extends FlatSpec with Matchers {
 
     downGoodness should be < leftGoodness
   }
+
+  "The move sequencer" should "return the starting position when applying an empty list of moves" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val outcome: MoveSequenceOutcome = MoveSequencer.computeSequenceResult(grid, Coordinate(0,0), List.empty)
+
+    outcome match {
+      case EndedUpAtLocation(Coordinate(0,0), _) => ()
+      case _ => Failed
+    }
+  }
+
+  it should "indicate an illegal move if the move sequence would take the player off the grid" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val outcome: MoveSequenceOutcome = MoveSequencer.computeSequenceResult(
+      playerArray = grid,
+      startingLocation = Coordinate(0,0),
+      moveSequence = List(Up()))
+
+    outcome should be (PerformedIllegalMove())
+  }
+
+  it should "indicate an illegal move if a longer move sequence would take the player off the grid" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val outcome: MoveSequenceOutcome = MoveSequencer.computeSequenceResult(
+      playerArray = grid,
+      startingLocation = Coordinate(0,0),
+      moveSequence = List(Right(), Down(), Right(), Down(), Down()))
+
+    outcome should be (PerformedIllegalMove())
+  }
+
+  it should "indicate a successful move to the opposite corner of the grid if there are no obstacles" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val outcome: MoveSequenceOutcome = MoveSequencer.computeSequenceResult(
+      playerArray = grid,
+      startingLocation = Coordinate(0,0),
+      moveSequence = List(Right(), Down(), Right(), Down()))
+
+    outcome match {
+      case EndedUpAtLocation(Coordinate(2,2), _) => ()
+      case _ => fail()
+    }
+  }
+
+  it should "indicate an illegal move if the sequence moves to the opposite corner but there is an obstacle" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1  2
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val outcome: MoveSequenceOutcome = MoveSequencer.computeSequenceResult(
+      playerArray = grid,
+      startingLocation = Coordinate(0,0),
+      moveSequence = List(Right(), Down(), Right(), Down()))
+
+    outcome should be (PerformedIllegalMove())
+  }
+
+  it should "indicate an illegal move if the sequence makes the player trip over its own tail" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val outcome: MoveSequenceOutcome = MoveSequencer.computeSequenceResult(
+      playerArray = grid,
+      startingLocation = Coordinate(0,0),
+      moveSequence = List(Right(), Down(), Right(), Up(), Left()))
+
+    outcome should be (PerformedIllegalMove())
+  }
+
+  it should "indicate an illegal move if the sequence makes the player trip over its own tail then carries on into an empty space" in {
+    val inputGrid = """ 0 -1 -1
+                      |-1 -1 -1
+                      |-1 -1 -1""".stripMargin
+
+    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
+
+    val outcome: MoveSequenceOutcome = MoveSequencer.computeSequenceResult(
+      playerArray = grid,
+      startingLocation = Coordinate(0,0),
+      moveSequence = List(Right(), Down(), Right(), Up(), Left(), Left(), Down()))
+
+    outcome should be (PerformedIllegalMove())
+  }
+
+
 
 }
