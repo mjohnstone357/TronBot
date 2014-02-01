@@ -170,15 +170,16 @@ object GridRacer {
 
     for (y <- 0 until height; x <- 0 until width) {
 
-      val distanceOfClosestPlayer: Int =
-        (for (player <- playerLocations.keySet) yield distanceGrids(player)(y)(x)).min
+      val distances: Set[Int] = for (player <- playerLocations.keySet if distanceGrids(player)(y)(x) != GameGrid.EmptySpaceNumber) yield distanceGrids(player)(y)(x)
 
-      val result =
-        if (distanceOfClosestPlayer == GameGrid.EmptySpaceNumber) {
+      val result =       // TODO min is redundant?
+        if (distances.isEmpty ) {
           GameGrid.EmptySpaceNumber
         } else {
+          val minimumDistance = distances.min
+
           val playersAtMinimumDistance: Set[Int] =
-            for (player <- playerLocations.keySet if distanceGrids(player)(y)(x) == distanceOfClosestPlayer) yield player
+            for (player <- playerLocations.keySet if distanceGrids(player)(y)(x) == minimumDistance) yield player
 
           if (playersAtMinimumDistance.size == 1) {
             playersAtMinimumDistance.head

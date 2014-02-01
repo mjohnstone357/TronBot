@@ -432,15 +432,15 @@ class PlayerTests extends FlatSpec with Matchers {
     val raceGrid: Array[Array[Int]] = GridRacer.makeRaceGrid(grid, Map(0 -> Coordinate(0, 0), 2 -> Coordinate(2, 2)))
 
     val outputGrid =
-      """-1  0 -1
+      """ 0  0 -1
         | 0 -1  2
-        |-1  2 -1""".stripMargin
+        |-1  2  2""".stripMargin
 
     ArrayUtils.render(raceGrid) should be (outputGrid)
 
   }
 
-  it should "indicate that each player can reach two cells before the other" in {
+  it should "indicate that each player can reach three cells before the other" in {
     val inputGrid =
       """ 0 -1 -1
         |-1 -1 -1
@@ -450,7 +450,7 @@ class PlayerTests extends FlatSpec with Matchers {
 
     val scores: Map[Int, Int] = GridRacer.getPlayerScores(grid, Map(0 -> Coordinate(0, 0), 2 -> Coordinate(2, 2)))
 
-    scores should be (Map(0 -> 2, 2 -> 2))
+    scores should be (Map(0 -> 3, 2 -> 3))
   }
 
   it should "not have silly bug" in {
@@ -465,7 +465,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val outputGrid =
       """-1  0  0
         |-1 -1  0
-        |-1 -1  0""".stripMargin
+        | 3  0  0""".stripMargin
 
     ArrayUtils.render(raceGrid) should be (outputGrid)
   }
@@ -479,7 +479,7 @@ class PlayerTests extends FlatSpec with Matchers {
 
     val scores: Map[Int, Int] = GridRacer.getPlayerScores(grid, Map(0 -> Coordinate(1, 2), 3 -> Coordinate(0, 2)))
 
-    scores should be (Map(0 -> 4, 2 -> 0))
+    scores should be (Map(0 -> 5, 3 -> 1))
   }
 
   "The move sequencer" should "return the starting position when applying an empty list of moves" in {
