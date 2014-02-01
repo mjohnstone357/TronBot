@@ -25,27 +25,23 @@ object Player {
 
       // Pure stuff
 
-      val turn: PlayerInfo = playerInfosThisTurn(myPlayerNumber)
+      val turn = playerInfosThisTurn(myPlayerNumber)
 
-      val playerLocations: mutable.Map[Int, Coordinate] = new mutable.HashMap[Int, Coordinate]()
-      for (playerInfo <- playerInfosThisTurn) {
-        playerInfo match {
-          case PlayerLocation(playerNumber, location, _) => playerLocations += playerNumber -> location
-          case _ => ()
-        }
+      val myLocation = turn match {
+        case PlayerLocation(_, location, _) => location
+        case _ => sys.error("I seem to be dead.")
       }
-
-      val locationMap: Map[Int, Coordinate] = (for (x: (Int, Coordinate) <- playerLocations) yield x).toMap
 
       val availableMoves: Set[Move] = gameGrid.getAvailableMoves(myPlayerNumber)
 
       if (availableMoves.isEmpty) {
         println("I seem to have got trapped :(")
       } else {
+        // For now, just see which move provides us with the best score
+        val distanceFinder = new DistanceFinder(gameGrid.array)
 
         // For each available move, compute the score
-        val moveScores: Set[(Move, Int)] = MoveAnalyser.determineMoveGoodness(gameGrid.array, locationMap, myPlayerNumber).toSet
-        debug(moveScores.size + " move scores available.")
+        val moveScores: Set[(Move, Int)] = for (move <- availableMoves) yield (move, distanceFinder.getNumberOfReachableCells(myLocation.applyMove(move)))
 
         // TODO Find the opponents' distances and try to reduce their scores...
 
@@ -103,58 +99,21 @@ object MoveAnalyser {
   def determineMoveGoodness(playerArray: Array[Array[Int]], playerLocationMap: Map[Int, Coordinate],
                             currentPlayer: Int): Map[Move, Int] = {
 
-
-    val playerLocation = playerLocationMap(currentPlayer)
+    val distanceFinder: DistanceFinder = new DistanceFinder(playerArray)
 
     val width = playerArray.head.length
     val height = playerArray.length
 
-    val moveSequences: List[List[Move]] = for (move1 <- Move.AllMoves.toList; move2 <- Move.AllMoves.toList) yield List(move1, move2)
+    val playerLocation = playerLocationMap(currentPlayer)
 
-    val moveSequenceResults: List[(Move, MoveSequenceOutcome)] = for (moveSequence: List[Move] <- moveSequences)
-      yield moveSequence.head -> MoveSequencer.computeSequenceResult(playerArray, playerLocation, moveSequence)
+    val legalMoves = for (move <- Move.AllMoves;
+      resultantLocation = playerLocation.applyMove(move)
+      if resultantLocation.isWithin(width, height) && playerArray(resultantLocation.y)(resultantLocation.x) == GameGrid.EmptySpaceNumber
+    ) yield move
 
-    val moveResults: Map[Move, List[MoveSequenceOutcome]] =
-      (for (move <- Move.AllMoves;
-        moveResults = for (result <- moveSequenceResults if result._1 == move) yield result._2)
-          yield move -> moveResults).toMap
+    val moveScores = for (move <- legalMoves) yield move -> distanceFinder.getNumberOfReachableCells(playerLocation.applyMove(move))
 
-    val legalMoves: Map[Move, List[MoveSequenceOutcome]] =
-      for (moveResultPair: (Move, List[MoveSequenceOutcome]) <- moveResults if !MoveSequenceOutcome.allMovesIllegal(moveResultPair._2)) yield moveResultPair
-
-    val moveScores: Map[Move, List[Int]] =
-      for (moveResultPair <- legalMoves) yield
-        moveResultPair._1 -> (for (EndedUpAtLocation(location, resultantArray) <- moveResultPair._2) yield
-          new DistanceFinder(resultantArray).getNumberOfReachableCells(location))
-
-    val maximumMoveScores: Map[Move, Int] = for (moveScoresPair <- moveScores) yield moveScoresPair._1 -> moveScoresPair._2.max
-
-    if (!maximumMoveScores.isEmpty) {
-      maximumMoveScores
-    } else {
-
-      Console.err.println("Warning: falling back to single-move logic.")
-
-      def cellIsValid(coordinate: Coordinate): Boolean = {
-        val (x, y) = (coordinate.x, coordinate.y)
-        x < width && x >= 0 &&
-          y < height && y >= 0 &&
-          playerArray(y)(x) == GameGrid.EmptySpaceNumber
-      }
-
-      def moveIsAvailable(move: Move): Boolean = {
-        val resultantLocation: Coordinate = playerLocation.applyMove(move)
-        cellIsValid(resultantLocation)
-      }
-
-      val availableMoves: Set[Move] = for (move <- Move.AllMoves if moveIsAvailable(move)) yield move
-
-      // For now, just see which move provides us with the best score
-      val distanceFinder = new DistanceFinder(playerArray)
-
-      // For each available move, compute the score
-      (for (move <- availableMoves) yield (move, distanceFinder.getNumberOfReachableCells(playerLocation.applyMove(move)))).toMap
-    }
+    moveScores.toMap
   }
 
 }
@@ -230,57 +189,6 @@ class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
 
 }
 
-abstract class MoveSequenceOutcome()
-
-object MoveSequenceOutcome {
-  def allMovesIllegal(outcomes: List[MoveSequenceOutcome]): Boolean = {
-    for (outcome <- outcomes) {
-      outcome match {
-        case PerformedIllegalMove() => ()
-        case _ => return false
-      }
-    }
-    true
-  }
-}
-
-sealed case class PerformedIllegalMove() extends MoveSequenceOutcome
-sealed case class EndedUpAtLocation(location: Coordinate, resultantArray: Array[Array[Int]]) extends MoveSequenceOutcome
-
-object MoveSequencer {
-
-  import ArrayUtils._
-
-  val ArbitraryPlayerNumber: Int = 0
-
-  def computeSequenceResult(playerArray: Array[Array[Int]], startingLocation: Coordinate,
-                            moveSequence: List[Move]): MoveSequenceOutcome = {
-
-    val width = playerArray.head.length
-    val height = playerArray.length
-
-    val simulationArray: Array[Array[Int]] = for (cells <- playerArray) yield cells.clone()
-    var currentLocation = startingLocation
-
-    simulationArray(startingLocation.y)(startingLocation.x) = ArbitraryPlayerNumber
-
-    for (move <- moveSequence) {
-      currentLocation = currentLocation.applyMove(move)
-
-      if (!currentLocation.isWithin(width, height) ||
-        get(simulationArray, currentLocation) != GameGrid.EmptySpaceNumber) {
-        return PerformedIllegalMove()
-      }
-
-      set(simulationArray, currentLocation, ArbitraryPlayerNumber)
-
-    }
-
-    EndedUpAtLocation(currentLocation, simulationArray)
-  }
-
-}
-
 object GameGrid {
   val EmptySpaceNumber = -1
 
@@ -310,14 +218,6 @@ object ArrayUtils {
   }
 
   def get(array: Array[Array[Int]], x: Int, y: Int) = array(y)(x)
-
-  def get(array: Array[Array[Int]], coordinate: Coordinate) = {
-    array(coordinate.y)(coordinate.x)
-  }
-
-  def set(array: Array[Array[Int]], coordinate: Coordinate, value: Int) = {
-    array(coordinate.y)(coordinate.x) = value
-  }
 
   def makeRow(rowString: String): Array[Int] = {
     val cells: Array[String] = for (cell <- rowString.split(" ") if !cell.isEmpty) yield cell
