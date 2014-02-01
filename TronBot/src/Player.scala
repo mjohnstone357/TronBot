@@ -12,10 +12,14 @@ object Player {
 
     val gameGrid = new GameGrid(GameWidth, GameHeight)
 
+    var timer = System.currentTimeMillis()
+
     while (true) {
 
       // Impure input stuff
       val turnInput: List[String] = readOneTurn(Source.stdin)
+
+      timer = System.currentTimeMillis()
 
       val myPlayerNumber = turnInput.head.split(" ")(1).toInt
 
@@ -51,6 +55,9 @@ object Player {
         // Impure output stuff
 
         writeMove(chosenMove)
+
+        debug("Processed move in " + (System.currentTimeMillis() - timer) + " ms.")
+
       }
 
 
