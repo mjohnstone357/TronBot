@@ -575,7 +575,7 @@ class PlayerTests extends FlatSpec with Matchers {
     outcome should be (PerformedIllegalMove())
   }
 
-  it should "indicate an illegal move if the sequence makes the player trip over its own tail then carries on into an empty space" in {
+  it should "indicate an illegal move if the sequence makes the player trip over its own tail then carry on into an empty space" in {
     val inputGrid = """ 0 -1 -1
                       |-1 -1 -1
                       |-1 -1 -1""".stripMargin
