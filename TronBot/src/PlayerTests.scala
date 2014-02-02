@@ -381,25 +381,25 @@ class PlayerTests extends FlatSpec with Matchers {
   }
 
   // TODO Fix this test by implementing 2-move lookahead
-//  it should "find a move which cuts off a section of grid on the following move to be less desirable than one that does not" in {
-//    val inputGrid =
-//      """-1 -1 -1  0 -1
-//        |-1 -1 -1  0 -1
-//        |-1 -1 -1  0 -1
-//        |-1 -1 -1  0 -1
-//        |-1 -1 -1 -1 -1""".stripMargin
-//
-//    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
-//      playerArray = arrayFromParsing(inputGrid),
-//      playerLocationMap = Map(0 -> Coordinate(3, 3)),
-//      currentPlayer = 0)
-//
-//    goodnessMap.keySet should be (Set(Left(), Right(), Down()))
-//    val downGoodness: Int = goodnessMap(Down())
-//    val leftGoodness: Int = goodnessMap(Left())
-//
-//    downGoodness should be < leftGoodness
-//  }
+  it should "find a move which cuts off a section of grid on the following move to be less desirable than one that does not" in {
+    val inputGrid =
+      """-1 -1 -1  0 -1
+        |-1 -1 -1  0 -1
+        |-1 -1 -1  0 -1
+        |-1 -1 -1  0 -1
+        |-1 -1 -1 -1 -1""".stripMargin
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = arrayFromParsing(inputGrid),
+      playerLocationMap = Map(0 -> Coordinate(3, 3)),
+      currentPlayer = 0)
+
+    goodnessMap.keySet should be (Set(Left(), Right(), Down()))
+    val downGoodness: Int = goodnessMap(Down())
+    val leftGoodness: Int = goodnessMap(Left())
+
+    downGoodness should be < leftGoodness
+  }
 
   it should "prefer a move which increases the player's ability to reach cells before its opponent" in {
     val inputGrid =
