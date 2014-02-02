@@ -421,6 +421,24 @@ class PlayerTests extends FlatSpec with Matchers {
 
   }
 
+  it should "prefer a move which does not make the player retreat into its own territory" in {
+    val inputGrid =
+      """-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+        | 2 -1 -1 -1  0 -1 -1 -1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1""".stripMargin
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = arrayFromParsing(inputGrid),
+      playerLocationMap = Map(0 -> Coordinate(4, 1), 2 -> Coordinate(0, 1)),
+      currentPlayer = 0)
+
+    goodnessMap.keySet should be (Set(Up(), Down(), Left(), Right()))
+
+    // Right is the worst move, since it gains us nothing
+    goodnessMap(Right()) should be < List(goodnessMap(Left()), goodnessMap(Up()), goodnessMap(Down())).min
+
+  }
+
   "The grid racer" should "indicate the player which can first reach each cell in an almost empty 3x3 grid" in {
     val inputGrid =
       """ 0 -1 -1
