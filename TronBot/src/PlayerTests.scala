@@ -327,7 +327,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
       playerArray = grid,
       playerLocationMap = Map(0 -> Coordinate(1, 1)),
-      currentPlayer = 0)
+      currentPlayer = 0, moveCounter = 100)
 
     goodnessMap.keySet should be (Move.AllMoves)
   }
@@ -342,7 +342,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
       playerArray = grid,
       playerLocationMap = Map(0 -> Coordinate(0, 0)),
-      currentPlayer = 0)
+      currentPlayer = 0, moveCounter = 100)
 
     goodnessMap.keySet should be (Set(Right(), Down()))
   }
@@ -355,7 +355,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
       playerArray = arrayFromParsing(inputGrid),
       playerLocationMap = Map(0 -> Coordinate(0, 0)),
-      currentPlayer = 0)
+      currentPlayer = 0, moveCounter = 100)
 
     goodnessMap.keySet should be (Set(Right(), Down()))
     val downGoodness: Int = goodnessMap(Down())
@@ -372,7 +372,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
       playerArray = arrayFromParsing(inputGrid),
       playerLocationMap = Map(0 -> Coordinate(1, 1), 3 -> Coordinate(0, 2)),
-      currentPlayer = 0)
+      currentPlayer = 0, moveCounter = 100)
 
     goodnessMap.keySet should be (Set(Up(), Right(), Down()))
 
@@ -392,7 +392,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
       playerArray = arrayFromParsing(inputGrid),
       playerLocationMap = Map(0 -> Coordinate(3, 3)),
-      currentPlayer = 0)
+      currentPlayer = 0, moveCounter = 100)
 
     goodnessMap.keySet should be (Set(Left(), Right(), Down()))
     val downGoodness: Int = goodnessMap(Down())
@@ -412,7 +412,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
       playerArray = arrayFromParsing(inputGrid),
       playerLocationMap = Map(0 -> Coordinate(1, 1), 2 -> Coordinate(3, 3)),
-      currentPlayer = 0)
+      currentPlayer = 0, moveCounter = 100)
 
     goodnessMap.keySet should be (Set(Up(), Down(), Left(), Right()))
 
@@ -430,7 +430,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
       playerArray = arrayFromParsing(inputGrid),
       playerLocationMap = Map(0 -> Coordinate(4, 1), 2 -> Coordinate(0, 1)),
-      currentPlayer = 0)
+      currentPlayer = 0, moveCounter = 100)
 
     goodnessMap.keySet should be (Set(Up(), Down(), Left(), Right()))
 

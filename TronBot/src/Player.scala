@@ -134,9 +134,9 @@ object MoveAnalyser {
 
     val opponents: Set[Int] = playerLocationMap.keySet - currentPlayer
 
-    val utilitiesStart = System.currentTimeMillis()
-
     val locationMapWithOnlyMe: Map[Int, Coordinate] = Map(currentPlayer -> playerLocationMap(currentPlayer))
+
+    val utilitiesStart = System.currentTimeMillis()
 
     val myUtility: Map[Move, Int] =
       (for (move <- legalMoves;
@@ -150,6 +150,9 @@ object MoveAnalyser {
       return myUtility
     }
 
+    val midpoint = System.currentTimeMillis()
+    Console.err.println("Took " + (midpoint - utilitiesStart) + " ms on myself.")
+
     val opponentUtilities: Map[Move, Int] =
       (for (move <- legalMoves;
             playerRacingScores: Map[Int, Int] = GridRacer.getPlayerScores(moveResultantArrays(move),
@@ -157,13 +160,12 @@ object MoveAnalyser {
             utilityToOpponents: Int = (for (opponent <- opponents) yield playerRacingScores(opponent)).sum)
       yield move -> utilityToOpponents).toMap
 
-    val midpoint = System.currentTimeMillis()
-    Console.err.println("Took " + (midpoint - utilitiesStart) + " ms on opponents.")
+    val endPoint = System.currentTimeMillis()
+    Console.err.println("Took " + (endPoint - midpoint) + " ms on opponents.")
 
 
 
-    val midpoint2 = System.currentTimeMillis()
-    Console.err.println("Took " + (midpoint2 - midpoint) + " ms on myself.")
+
 
     (for (move <- legalMoves) yield move -> (myUtility(move) - opponentUtilities(move))).toMap
 
@@ -182,19 +184,19 @@ object GridRacer {
 
     val distanceFinder: DistanceFinder = new DistanceFinder(playerArray)
 
-    Console.err.println("Created distance finder" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
+//    Console.err.println("Created distance finder" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
     raceGridTimer = System.currentTimeMillis()
 
     val outputGrid = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
 
-    Console.err.println("Initialised output grid" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
+//    Console.err.println("Initialised output grid" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
     raceGridTimer = System.currentTimeMillis()
 
     val distanceGrids: Map[Int, Array[Array[Int]]] =
       (for (player <- playerLocations.keySet;
             playerLocation = playerLocations(player)) yield player -> distanceFinder.getDistanceGridForPlayer(playerLocation)).toMap
 
-    Console.err.println("Created distance grids" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
+//    Console.err.println("Created distance grids" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
     raceGridTimer = System.currentTimeMillis()
 
     for (y <- 0 until height; x <- 0 until width) {
@@ -222,10 +224,10 @@ object GridRacer {
 
     }
 
-    Console.err.println("Filled in output grid" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
+//    Console.err.println("Filled in output grid" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
     raceGridTimer = System.currentTimeMillis()
 
-    Console.err.println("=============================")
+//    Console.err.println("=============================")
 
     outputGrid
 
@@ -238,9 +240,9 @@ object GridRacer {
 
     val raceGrid: Array[Array[Int]] = makeRaceGrid(playerArray, playerLocations)
 
-    Console.err.println("Made race grid in " + (System.currentTimeMillis() - timer) + " ms.")
+//    Console.err.println("Made race grid in " + (System.currentTimeMillis() - timer) + " ms.")
 
-    Console.err.println("=============================")
+//    Console.err.println("=============================")
 //    timer = System.currentTimeMillis()
 
     def countInstances(playerNumber: Int): Int = {
@@ -260,7 +262,7 @@ object GridRacer {
 
     val playerCountMap: Map[Int, Int] = (for (player <- playerLocations.keySet) yield player -> countInstances(player)).toMap
 
-    Console.err.println("getPlayerScores() took " + (System.currentTimeMillis() - timer) + " ms.")
+//    Console.err.println("getPlayerScores() took " + (System.currentTimeMillis() - timer) + " ms.")
     playerCountMap
   }
 }
@@ -446,7 +448,7 @@ class DistanceFinder(arr: Array[Array[Int]]) {
     val height = array.length
 
     val distanceArray: Array[Array[Int]] = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
-    Console.err.println("  Filled array: " + (System.currentTimeMillis() - startTime) + " ms.")
+//    Console.err.println("  Filled array: " + (System.currentTimeMillis() - startTime) + " ms.")
 
     val coordinatesToExplore = ArrayBuffer[Coordinate]()
 //    Console.err.println("  coordinatesToExplore: " + (System.currentTimeMillis() - startTime) + " ms.")
