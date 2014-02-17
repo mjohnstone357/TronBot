@@ -14,6 +14,8 @@ object Player {
 
     var timer = System.currentTimeMillis()
 
+    var moveCounter = 0
+
     while (true) {
 
       // Impure input stuff
@@ -45,9 +47,7 @@ object Player {
 
         val locationMap: Map[Int, Coordinate] = (for (x: (Int, Coordinate) <- playerLocations) yield x).toMap
 
-        val moveScorePairs: Set[(Move, Int)] = MoveAnalyser.determineMoveGoodness(gameGrid.array, locationMap, myPlayerNumber).toSet
-
-        debug("Just ran utility function.")
+        val moveScorePairs: Set[(Move, Int)] = MoveAnalyser.determineMoveGoodness(gameGrid.array, locationMap, myPlayerNumber, moveCounter).toSet
 
         val maxScore = (for ((_, score) <- moveScorePairs) yield score).max
         val bestMoves: Set[Move] = for ((move, score) <- moveScorePairs if score == maxScore) yield move
@@ -58,10 +58,11 @@ object Player {
 
         writeMove(chosenMove)
 
+        moveCounter += 1
+
         debug("Processed move in " + (System.currentTimeMillis() - timer) + " ms.")
 
       }
-
 
     }
   }
@@ -104,7 +105,7 @@ object MoveAnalyser {
    * @return a map from each legal move to an integer estimate of its utility to the currentPlayer
    */
   def determineMoveGoodness(playerArray: Array[Array[Int]], playerLocationMap: Map[Int, Coordinate],
-                            currentPlayer: Int): Map[Move, Int] = {
+                            currentPlayer: Int, moveCounter: Int): Map[Move, Int] = {
 
     val width = playerArray.head.length
     val height = playerArray.length
@@ -133,8 +134,21 @@ object MoveAnalyser {
 
     val opponents: Set[Int] = playerLocationMap.keySet - currentPlayer
 
-    val megaMap: Map[Move, Map[Int, Int]] = (for (move <- legalMoves) yield move -> GridRacer.getPlayerScores(moveResultantArrays(move),
-      playerLocationMap + (currentPlayer -> playerLocation.applyMove(move)))).toMap
+    val utilitiesStart = System.currentTimeMillis()
+
+    val locationMapWithOnlyMe: Map[Int, Coordinate] = Map(currentPlayer -> playerLocationMap(currentPlayer))
+
+    val myUtility: Map[Move, Int] =
+      (for (move <- legalMoves;
+            playerRacingScores: Map[Int, Int] = GridRacer.getPlayerScores(moveResultantArrays(move),
+              locationMapWithOnlyMe + (currentPlayer -> playerLocation.applyMove(move))))
+      yield move -> playerRacingScores(currentPlayer)).toMap
+
+    // We don't have time to do our due diligence in the first move, so make an arbitrary one
+    if (moveCounter == 0) {
+      Console.err.println("Currently in stupid mode.")
+      return myUtility
+    }
 
     val opponentUtilities: Map[Move, Int] =
       (for (move <- legalMoves;
@@ -143,13 +157,16 @@ object MoveAnalyser {
             utilityToOpponents: Int = (for (opponent <- opponents) yield playerRacingScores(opponent)).sum)
       yield move -> utilityToOpponents).toMap
 
-    val myUtility: Map[Move, Int] =
-      (for (move <- legalMoves;
-            playerRacingScores: Map[Int, Int] = GridRacer.getPlayerScores(moveResultantArrays(move),
-              playerLocationMap + (currentPlayer -> playerLocation.applyMove(move))))
-      yield move -> playerRacingScores(currentPlayer)).toMap
+    val midpoint = System.currentTimeMillis()
+    Console.err.println("Took " + (midpoint - utilitiesStart) + " ms on opponents.")
+
+
+
+    val midpoint2 = System.currentTimeMillis()
+    Console.err.println("Took " + (midpoint2 - midpoint) + " ms on myself.")
 
     (for (move <- legalMoves) yield move -> (myUtility(move) - opponentUtilities(move))).toMap
+
   }
 
 }
@@ -217,13 +234,14 @@ object GridRacer {
 
   def getPlayerScores(playerArray: Array[Array[Int]], playerLocations: Map[Int, Coordinate]): Map[Int, Int] = {
 
-    var timer = System.currentTimeMillis()
+    val timer = System.currentTimeMillis()
 
     val raceGrid: Array[Array[Int]] = makeRaceGrid(playerArray, playerLocations)
 
     Console.err.println("Made race grid in " + (System.currentTimeMillis() - timer) + " ms.")
+
     Console.err.println("=============================")
-    timer = System.currentTimeMillis()
+//    timer = System.currentTimeMillis()
 
     def countInstances(playerNumber: Int): Int = {
 
@@ -242,8 +260,7 @@ object GridRacer {
 
     val playerCountMap: Map[Int, Int] = (for (player <- playerLocations.keySet) yield player -> countInstances(player)).toMap
 
-    Console.err.println("Made player count map in " + (System.currentTimeMillis() - timer) + " ms.")
-    timer = System.currentTimeMillis()
+    Console.err.println("getPlayerScores() took " + (System.currentTimeMillis() - timer) + " ms.")
     playerCountMap
   }
 }
@@ -429,7 +446,10 @@ class DistanceFinder(arr: Array[Array[Int]]) {
     val height = array.length
 
     val distanceArray: Array[Array[Int]] = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
+    Console.err.println("  Filled array: " + (System.currentTimeMillis() - startTime) + " ms.")
+
     val coordinatesToExplore = ArrayBuffer[Coordinate]()
+//    Console.err.println("  coordinatesToExplore: " + (System.currentTimeMillis() - startTime) + " ms.")
 
     distanceArray(playerLocation.y)(playerLocation.x) = 0
     coordinatesToExplore.prepend(playerLocation)
@@ -456,10 +476,10 @@ class DistanceFinder(arr: Array[Array[Int]]) {
       for (cell <- cellsToExplore) {
         coordinatesToExplore.append(cell)
       }
-
+//      Console.err.println("coordinatesToExplore: " + coordinatesToExplore.size)
     }
-
-    Console.err.println("***** Computed distance grid in " + (System.currentTimeMillis() - startTime) + " ms. *****")
+//    Console.err.println("  Finished loop: " + (System.currentTimeMillis() - startTime) + " ms.")
+//    Console.err.println("***** Computed distance grid in " + (System.currentTimeMillis() - startTime) + " ms. *****")
 
     distanceArray
   }

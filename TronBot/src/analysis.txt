@@ -1,0 +1,99 @@
+Created distance finder after 1 ms.
+Initialised output grid after 1 ms.
+  Filled array: 1 ms.
+  coordinatesToExplore: 1 ms.
+  Finished loop: 18 ms.
+***** Computed distance grid in 18 ms. *****
+  Filled array: 1 ms.
+  coordinatesToExplore: 1 ms.
+  Finished loop: 8 ms.
+***** Computed distance grid in 8 ms. *****
+Created distance grids after 26 ms.
+Filled in output grid after 12 ms.
+=============================
+Made race grid in 40 ms.
+=============================
+getPlayerScores() took 41 ms.
+Created distance finder after 0 ms.
+Initialised output grid after 0 ms.
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 6 ms.
+***** Computed distance grid in 6 ms. *****
+  Filled array: 0 ms.
+  coordinatesToExplore: 1 ms.
+  Finished loop: 4 ms.
+***** Computed distance grid in 4 ms. *****
+Created distance grids after 10 ms.
+Filled in output grid after 5 ms.
+=============================
+Made race grid in 15 ms.
+=============================
+getPlayerScores() took 15 ms.
+Created distance finder after 0 ms.
+Initialised output grid after 0 ms.
+  Filled array: 1 ms.
+  coordinatesToExplore: 1 ms.
+  Finished loop: 3 ms.
+***** Computed distance grid in 3 ms. *****
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 3 ms.
+***** Computed distance grid in 3 ms. *****
+Created distance grids after 6 ms.
+Filled in output grid after 2 ms.
+=============================
+Made race grid in 8 ms.
+=============================
+getPlayerScores() took 8 ms.
+Took 67 ms on opponents.
+Created distance finder after 0 ms.
+Initialised output grid after 0 ms.
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 2 ms.
+***** Computed distance grid in 2 ms. *****
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 6 ms.
+***** Computed distance grid in 6 ms. *****
+Created distance grids after 9 ms.
+Filled in output grid after 0 ms.
+=============================
+Made race grid in 9 ms.
+=============================
+getPlayerScores() took 10 ms.
+Created distance finder after 0 ms.
+Initialised output grid after 0 ms.
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 2 ms.
+***** Computed distance grid in 2 ms. *****
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 2 ms.
+***** Computed distance grid in 2 ms. *****
+Created distance grids after 4 ms.
+Filled in output grid after 1 ms.
+=============================
+Made race grid in 5 ms.
+=============================
+getPlayerScores() took 5 ms.
+Created distance finder after 0 ms.
+Initialised output grid after 0 ms.
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 2 ms.
+***** Computed distance grid in 2 ms. *****
+  Filled array: 0 ms.
+  coordinatesToExplore: 0 ms.
+  Finished loop: 2 ms.
+***** Computed distance grid in 2 ms. *****
+Created distance grids after 4 ms.
+Filled in output grid after 1 ms.
+=============================
+Made race grid in 5 ms.
+=============================
+getPlayerScores() took 5 ms.
+Took 20 ms on myself.
+Processed move in 88 ms.
