@@ -134,40 +134,30 @@ object MoveAnalyser {
 
     val opponents: Set[Int] = playerLocationMap.keySet - currentPlayer
 
-    val locationMapWithOnlyMe: Map[Int, Coordinate] = Map(currentPlayer -> playerLocationMap(currentPlayer))
-
     val utilitiesStart = System.currentTimeMillis()
 
-    val myUtility: Map[Move, Int] =
+    // Move -> Player -> Utility
+    val utilities: Map[Move, Map[Int, Int]] =
       (for (move <- legalMoves;
-            playerRacingScores: Map[Int, Int] = GridRacer.getPlayerScores(moveResultantArrays(move),
-              locationMapWithOnlyMe + (currentPlayer -> playerLocation.applyMove(move))))
-      yield move -> playerRacingScores(currentPlayer)).toMap
+            playerRacingScores: Map[Int, Int] =
+              GridRacer2.getPlayerReachableCounts(
+                (playerLocationMap - currentPlayer) + (currentPlayer -> playerLocation.applyMove(move)),
+                (currentPlayer :: (playerLocationMap.keySet - currentPlayer).toList).toVector,
+                moveResultantArrays(move)
+              ))
+      yield move -> playerRacingScores).toMap
 
-    // We don't have time to do our due diligence in the first move, so make an arbitrary one
-    if (moveCounter == 0) {
-      Console.err.println("Currently in stupid mode.")
-      return myUtility
-    }
+    val myUtilities: Map[Move, Int] = (for (move <- legalMoves) yield move -> utilities(move)(currentPlayer)).toMap
 
-    val midpoint = System.currentTimeMillis()
-    Console.err.println("Took " + (midpoint - utilitiesStart) + " ms on myself.")
-
-    val opponentUtilities: Map[Move, Int] =
-      (for (move <- legalMoves;
-            playerRacingScores: Map[Int, Int] = GridRacer.getPlayerScores(moveResultantArrays(move),
-              playerLocationMap + (currentPlayer -> playerLocation.applyMove(move)));
-            utilityToOpponents: Int = (for (opponent <- opponents) yield playerRacingScores(opponent)).sum)
-      yield move -> utilityToOpponents).toMap
-
-    val endPoint = System.currentTimeMillis()
-    Console.err.println("Took " + (endPoint - midpoint) + " ms on opponents.")
+    val opponentUtilities: Map[Move, Int] = (for (move <- legalMoves) yield move -> (for (opponent <- opponents) yield utilities(move)(opponent)).sum).toMap
 
 
+    val moveScoreMap: Map[Move, Int] = (for (move <- legalMoves) yield move -> (myUtilities(move) - opponentUtilities(move))).toMap
 
+    Console.err.println("Utilities code took " + (System.currentTimeMillis() - utilitiesStart) + " ms to run.")
 
+    moveScoreMap
 
-    (for (move <- legalMoves) yield move -> (myUtility(move) - opponentUtilities(move))).toMap
 
   }
 
