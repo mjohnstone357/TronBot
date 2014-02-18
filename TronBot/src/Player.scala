@@ -267,6 +267,90 @@ object GridRacer {
   }
 }
 
+object GridRacer2 {
+
+  /**
+   * Get a map of player number to the number of cells that player can reach before all opponents
+   * @param playersAndLocations a map containing players and their locations
+   * @param playerTurnOrder a list specifying the order in which players will move, if you care about that (otherwise
+   *                        just use playersAndLocations.keySet)
+   * @param grid a game grid
+   * @return a map of player number to the number of cells that player can reach before all opponents
+   */
+  def getPlayerReachableCounts(playersAndLocations: Map[Int, Coordinate], playerTurnOrder: Vector[Int], grid: Array[Array[Int]]): Map[Int, Int] = {
+
+    val width = grid.head.length
+    val height = grid.length
+
+    val playerCount: Int = playerTurnOrder.size
+
+    val proximityCounts = new Array[Int](playerCount)
+
+    val raceGrid: Array[Array[Int]] = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
+
+    var currentPlayerIndex = 0
+
+    val coordinatesToExplore = new mutable.HashMap[Int, mutable.HashSet[Coordinate]]()
+
+    // Set the current locations of the players
+    for (player <- playerTurnOrder) {
+      val location: Coordinate = playersAndLocations(player)
+      raceGrid(location.y)(location.x) = player
+
+      if (!coordinatesToExplore.contains(player)) {
+        coordinatesToExplore(player) = new mutable.HashSet[Coordinate]()
+      }
+
+      coordinatesToExplore(player).add(location)
+    }
+
+    var exhaustedPlayerCount = 0
+
+    while (exhaustedPlayerCount < playerCount) {
+
+      if (currentPlayerIndex == 0) {
+        exhaustedPlayerCount = 0
+      }
+
+      val currentPlayer = playerTurnOrder(currentPlayerIndex)
+
+      val playerIterationCoordinates: mutable.HashSet[Coordinate] = coordinatesToExplore(currentPlayer)
+
+      val allNewCellsThisIteration = new mutable.HashSet[Coordinate]()
+
+      for (location <- playerIterationCoordinates) {
+        val explorableAdjacents = for(candidate <- location.getAdjacents
+                                      if candidate.isWithin(width, height) &&
+                                        grid(candidate.y)(candidate.x) == GameGrid.EmptySpaceNumber) yield candidate
+
+        for (cell <- explorableAdjacents) {
+          grid(cell.y)(cell.x) = currentPlayer
+          allNewCellsThisIteration.add(cell)
+        }
+
+        proximityCounts(currentPlayerIndex) += explorableAdjacents.size
+
+      }
+
+      if (playerIterationCoordinates.isEmpty) {
+        exhaustedPlayerCount += 1
+      }
+
+//      playerIterationCoordinates.clear()
+      coordinatesToExplore(currentPlayer) = allNewCellsThisIteration
+
+      // Now we've done the iteration for the current player
+
+      currentPlayerIndex = (currentPlayerIndex + 1) % playerCount
+
+    }
+
+    (for (i <- 0 until playerCount) yield playerTurnOrder(i) -> proximityCounts(i)).toMap
+
+  }
+
+}
+
 class TurnInfo()
 
 class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
@@ -450,7 +534,7 @@ class DistanceFinder(arr: Array[Array[Int]]) {
     val distanceArray: Array[Array[Int]] = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
 //    Console.err.println("  Filled array: " + (System.currentTimeMillis() - startTime) + " ms.")
 
-    val coordinatesToExplore = ArrayBuffer[Coordinate]()
+    val coordinatesToExplore = ArrayBuffer[Coordinate]() // TODO Use a mutable hashset?
 //    Console.err.println("  coordinatesToExplore: " + (System.currentTimeMillis() - startTime) + " ms.")
 
     distanceArray(playerLocation.y)(playerLocation.x) = 0
