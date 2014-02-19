@@ -134,8 +134,6 @@ object MoveAnalyser {
 
     val opponents: Set[Int] = playerLocationMap.keySet - currentPlayer
 
-    val utilitiesStart = System.currentTimeMillis()
-
     // Move -> Player -> Utility
     val utilities: Map[Move, Map[Int, Int]] =
       (for (move <- legalMoves;
@@ -154,107 +152,13 @@ object MoveAnalyser {
 
     val moveScoreMap: Map[Move, Int] = (for (move <- legalMoves) yield move -> (myUtilities(move) - opponentUtilities(move))).toMap
 
-    Console.err.println("Utilities code took " + (System.currentTimeMillis() - utilitiesStart) + " ms to run.")
+//    Console.err.println("Utilities code took " + (System.currentTimeMillis() - utilitiesStart) + " ms to run.")
 
     moveScoreMap
 
 
   }
 
-}
-
-object GridRacer {
-
-  def makeRaceGrid(playerArray: Array[Array[Int]], playerLocations: Map[Int, Coordinate]): Array[Array[Int]] = {
-
-    var raceGridTimer = System.currentTimeMillis()
-
-    val width = playerArray.head.length
-    val height = playerArray.length
-
-    val distanceFinder: DistanceFinder = new DistanceFinder(playerArray)
-
-//    Console.err.println("Created distance finder" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
-    raceGridTimer = System.currentTimeMillis()
-
-    val outputGrid = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
-
-//    Console.err.println("Initialised output grid" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
-    raceGridTimer = System.currentTimeMillis()
-
-    val distanceGrids: Map[Int, Array[Array[Int]]] =
-      (for (player <- playerLocations.keySet;
-            playerLocation = playerLocations(player)) yield player -> distanceFinder.getDistanceGridForPlayer(playerLocation)).toMap
-
-//    Console.err.println("Created distance grids" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
-    raceGridTimer = System.currentTimeMillis()
-
-    for (y <- 0 until height; x <- 0 until width) {
-
-      val distances: Set[Int] = for (player <- playerLocations.keySet if distanceGrids(player)(y)(x) != GameGrid.EmptySpaceNumber) yield distanceGrids(player)(y)(x)
-
-      val result =
-        if (distances.isEmpty ) {
-          GameGrid.EmptySpaceNumber
-        } else {
-          val minimumDistance = distances.min
-
-          val playersAtMinimumDistance: Set[Int] =
-            for (player <- playerLocations.keySet if distanceGrids(player)(y)(x) == minimumDistance) yield player
-
-          if (playersAtMinimumDistance.size == 1) {
-            playersAtMinimumDistance.head
-          } else {
-            // A tie
-            GameGrid.EmptySpaceNumber
-          }
-        }
-
-      outputGrid(y)(x) = result
-
-    }
-
-//    Console.err.println("Filled in output grid" + " after " + (System.currentTimeMillis() - raceGridTimer) + " ms.")
-    raceGridTimer = System.currentTimeMillis()
-
-//    Console.err.println("=============================")
-
-    outputGrid
-
-  }
-
-
-  def getPlayerScores(playerArray: Array[Array[Int]], playerLocations: Map[Int, Coordinate]): Map[Int, Int] = {
-
-    val timer = System.currentTimeMillis()
-
-    val raceGrid: Array[Array[Int]] = makeRaceGrid(playerArray, playerLocations)
-
-//    Console.err.println("Made race grid in " + (System.currentTimeMillis() - timer) + " ms.")
-
-//    Console.err.println("=============================")
-//    timer = System.currentTimeMillis()
-
-    def countInstances(playerNumber: Int): Int = {
-
-      val width = playerArray.head.length
-      val height = playerArray.length
-
-      var counter = 0
-
-      for (y <- 0 until height; x <- 0 until width) {
-        if (raceGrid(y)(x) == playerNumber) {
-          counter += 1
-        }
-      }
-      counter
-    }
-
-    val playerCountMap: Map[Int, Int] = (for (player <- playerLocations.keySet) yield player -> countInstances(player)).toMap
-
-//    Console.err.println("getPlayerScores() took " + (System.currentTimeMillis() - timer) + " ms.")
-    playerCountMap
-  }
 }
 
 object GridRacer2 {
@@ -508,71 +412,6 @@ object ArrayUtils {
 
   def arrayFromParsing(s: String): Array[Array[Int]] = {
     (for (line <- s.lines.toList) yield makeRow(line)).toArray
-  }
-}
-
-class DistanceFinder(arr: Array[Array[Int]]) {
-  val array = arr.clone()
-
-  def getDistanceGridForPlayer(playerLocation: Coordinate): Array[Array[Int]] = {
-
-    val startTime = System.currentTimeMillis()
-
-    val width = array.head.length
-    val height = array.length
-
-    val distanceArray: Array[Array[Int]] = Array.fill(height, width)(GameGrid.EmptySpaceNumber)
-//    Console.err.println("  Filled array: " + (System.currentTimeMillis() - startTime) + " ms.")
-
-    val coordinatesToExplore = ArrayBuffer[Coordinate]() // TODO Use a mutable hashset?
-//    Console.err.println("  coordinatesToExplore: " + (System.currentTimeMillis() - startTime) + " ms.")
-
-    distanceArray(playerLocation.y)(playerLocation.x) = 0
-    coordinatesToExplore.prepend(playerLocation)
-
-    while (!coordinatesToExplore.isEmpty) {
-      val next = coordinatesToExplore.remove(0)
-
-      val adjacents = for(candidate <- next.getAdjacents if candidate.isWithin(width, height)) yield candidate
-      val distances = for (adjacent <- adjacents; d = distanceArray(adjacent.y)(adjacent.x) if d != GameGrid.EmptySpaceNumber) yield d
-
-      if (next != playerLocation) {
-        val newDistance = distances.min + 1
-        distanceArray(next.y)(next.x) = newDistance
-      }
-
-      val cellsToExplore = for (adjacentCell <- adjacents
-                                if !coordinatesToExplore.contains(adjacentCell)
-                                if adjacentCell.isWithin(width, height) &&
-                                  adjacentCell != playerLocation &&
-                                  array(adjacentCell.y)(adjacentCell.x) == GameGrid.EmptySpaceNumber &&
-                                  distanceArray(adjacentCell.y)(adjacentCell.x) == GameGrid.EmptySpaceNumber
-      ) yield adjacentCell
-
-      for (cell <- cellsToExplore) {
-        coordinatesToExplore.append(cell)
-      }
-//      Console.err.println("coordinatesToExplore: " + coordinatesToExplore.size)
-    }
-//    Console.err.println("  Finished loop: " + (System.currentTimeMillis() - startTime) + " ms.")
-//    Console.err.println("***** Computed distance grid in " + (System.currentTimeMillis() - startTime) + " ms. *****")
-
-    distanceArray
-  }
-
-  def getNumberOfReachableCells(playerLocation: Coordinate): Int = {
-    val distanceGrid = getDistanceGridForPlayer(playerLocation)
-
-    var counter = 0
-    // TODO Make less imperative
-    for(array <- distanceGrid) {
-      for (cell <- array) {
-        if (cell != GameGrid.EmptySpaceNumber) {
-          counter += 1
-        }
-      }
-    }
-    counter
   }
 }
 

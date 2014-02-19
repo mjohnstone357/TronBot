@@ -184,139 +184,6 @@ class PlayerTests extends FlatSpec with Matchers {
     grid.rendered should be (inputGrid)
   }
 
-  "The DistanceFinder" should "compute the distance to each point on an empty input grid, starting from the middle" in {
-    val inputGrid =
-      """-1 -1 -1
-        |-1 -1 -1
-        |-1 -1 -1""".stripMargin
-
-    val outputGrid =
-      """ 2  1  2
-        | 1  0  1
-        | 2  1  2""".stripMargin
-
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
-    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(1,1))
-
-    ArrayUtils.render(distanceGrid) should be (outputGrid)
-
-  }
-
-  it should "compute the distance to each point on a larger input grid, starting from the left side" in {
-    val inputGrid =
-      """-1 -1 -1 -1 -1
-        |-1 -1 -1 -1 -1
-        |-1 -1 -1 -1 -1
-        |-1 -1 -1 -1 -1
-        |-1 -1 -1 -1 -1""".stripMargin
-
-    val outputGrid =
-      """ 2  3  4  5  6
-        | 1  2  3  4  5
-        | 0  1  2  3  4
-        | 1  2  3  4  5
-        | 2  3  4  5  6""".stripMargin
-
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
-    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
-
-    ArrayUtils.render(distanceGrid) should be (outputGrid)
-
-  }
-
-  it should "work with non-square grids" in {
-    val inputGrid =
-      """-1 -1 -1 -1 -1
-        |-1 -1 -1 -1 -1
-        |-1 -1 -1 -1 -1""".stripMargin
-
-    val outputGrid =
-      """ 1  2  3  4  5
-        | 0  1  2  3  4
-        | 1  2  3  4  5""".stripMargin
-
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
-    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,1))
-
-    ArrayUtils.render(distanceGrid) should be (outputGrid)
-
-  }
-
-  it should "find distances around obstacles" in {
-    val inputGrid =
-      """-1 -1 -1 -1 -1
-        |-1 -1 -1 -1 -1
-        |-1 -1  1 -1 -1
-        |-1 -1  2 -1 -1
-        |-1 -1  3 -1 -1""".stripMargin
-
-    val outputGrid =
-      """ 2  3  4  5  6
-        | 1  2  3  4  5
-        | 0  1 -1  5  6
-        | 1  2 -1  6  7
-        | 2  3 -1  7  8""".stripMargin
-
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
-    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
-
-    ArrayUtils.render(distanceGrid) should be (outputGrid)
-  }
-
-  it should "find distances around obstacles where there is a single-cell bottleneck" in {
-    val inputGrid =
-      """-1 -1 -1 -1 -1
-        |-1 -1  0 -1 -1
-        |-1 -1  1 -1 -1
-        |-1 -1  2 -1 -1
-        |-1 -1  3 -1 -1""".stripMargin
-
-    val outputGrid =
-      """ 2  3  4  5  6
-        | 1  2 -1  6  7
-        | 0  1 -1  7  8
-        | 1  2 -1  8  9
-        | 2  3 -1  9 10""".stripMargin
-
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
-    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
-
-    ArrayUtils.render(distanceGrid) should be (outputGrid)
-  }
-
-  it should "find distances around obstacles where are two paths and one is shorter" in {
-    val inputGrid =
-      """-1 -1 -1 -1 -1
-        |-1 -1  0 -1 -1
-        |-1 -1  1 -1 -1
-        |-1 -1  2 -1 -1
-        |-1 -1 -1 -1 -1""".stripMargin
-
-    val outputGrid =
-      """ 2  3  4  5  6
-        | 1  2 -1  6  7
-        | 0  1 -1  7  8
-        | 1  2 -1  6  7
-        | 2  3  4  5  6""".stripMargin
-
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val distanceFinder: DistanceFinder = new DistanceFinder(grid)
-    val distanceGrid: Array[Array[Int]] = distanceFinder.getDistanceGridForPlayer(Coordinate(0,2))
-
-    ArrayUtils.render(distanceGrid) should be (outputGrid)
-  }
-
   "The move analyser" should "return a map including all four moves when the player is in the middle of the grid" in {
     val inputGrid = """-1 -1 -1
                       |-1  0 -1
@@ -399,6 +266,7 @@ class PlayerTests extends FlatSpec with Matchers {
     val leftGoodness: Int = goodnessMap(Left())
 
     downGoodness should be < leftGoodness
+    // Maybe right is an acceptable move, as it makes maximum use of the rightmost column
   }
 
   it should "prefer a move which increases the player's ability to reach cells before its opponent" in {
@@ -439,26 +307,7 @@ class PlayerTests extends FlatSpec with Matchers {
 
   }
 
-  "The grid racer" should "indicate the player which can first reach each cell in an almost empty 3x3 grid" in {
-    val inputGrid =
-      """ 0 -1 -1
-        |-1 -1 -1
-        |-1 -1  2""".stripMargin
-    
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val raceGrid: Array[Array[Int]] = GridRacer.makeRaceGrid(grid, Map(0 -> Coordinate(0, 0), 2 -> Coordinate(2, 2)))
-
-    val outputGrid =
-      """ 0  0 -1
-        | 0 -1  2
-        |-1  2  2""".stripMargin
-
-    ArrayUtils.render(raceGrid) should be (outputGrid)
-
-  }
-
-  it should "indicate that each player can reach three cells before the other" in {
+  it should "indicate that the player to move first can reach more cells than the other" in {
     val inputGrid =
       """ 0 -1 -1
         |-1 -1 -1
@@ -466,26 +315,9 @@ class PlayerTests extends FlatSpec with Matchers {
 
     val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
-    val scores: Map[Int, Int] = GridRacer.getPlayerScores(grid, Map(0 -> Coordinate(0, 0), 2 -> Coordinate(2, 2)))
+    val scores: Map[Int, Int] = GridRacer2.getPlayerReachableCounts(Map(0 -> Coordinate(0, 0), 2 -> Coordinate(2, 2)), Vector(0, 2), grid)
 
-    scores should be (Map(0 -> 3, 2 -> 3))
-  }
-
-  it should "not have silly bug" in {
-    val inputGrid = """ 0 -1 -1
-                      | 0  0 -1
-                      | 3  0 -1""".stripMargin
-
-    val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
-
-    val raceGrid: Array[Array[Int]] = GridRacer.makeRaceGrid(grid, Map(0 -> Coordinate(1, 2), 3 -> Coordinate(0, 2)))
-
-    val outputGrid =
-      """-1  0  0
-        |-1 -1  0
-        | 3  0  0""".stripMargin
-
-    ArrayUtils.render(raceGrid) should be (outputGrid)
+    scores should be (Map(0 -> 5, 2 -> 2))
   }
 
   it should "indicate that player 0 can reach 4 cells first, as player 3 is trapped" in {
@@ -495,9 +327,9 @@ class PlayerTests extends FlatSpec with Matchers {
 
     val grid: Array[Array[Int]] = arrayFromParsing(inputGrid)
 
-    val scores: Map[Int, Int] = GridRacer.getPlayerScores(grid, Map(0 -> Coordinate(1, 2), 3 -> Coordinate(0, 2)))
+    val scores: Map[Int, Int] = GridRacer2.getPlayerReachableCounts(Map(0 -> Coordinate(1, 2), 3 -> Coordinate(0, 2)), Vector(0, 3), grid)
 
-    scores should be (Map(0 -> 5, 3 -> 1))
+    scores should be (Map(0 -> 4, 3 -> 0))
   }
 
   "The second implementation of the grid racer" should "indicate which of two players which can first reach each " +
