@@ -6,6 +6,7 @@ object Player {
   val GameWidth = 30
   val GameHeight = 20
 
+  val ReallyBadScore = -1000000
 
   def main(args: Array[String]) {
 
@@ -94,6 +95,18 @@ object Player {
 
 object MoveAnalyser {
 
+  def extractMyUtility(playerNumber: Int, playerUtilities: Map[Int, Int]): Int = {
+
+    val opponents = playerUtilities.keySet - playerNumber
+
+    val myUtility = playerUtilities(playerNumber)
+
+    val opponentUtilities = for (opponent <- opponents) yield playerUtilities(opponent)
+
+    myUtility - opponentUtilities.sum
+
+  }
+
   /**
    * Estimate the utility of each move. Only legal moves are returned.
    * @param playerArray a 2D array organised as a list of rows, in which each cell contains either a player number or
@@ -106,56 +119,43 @@ object MoveAnalyser {
   def determineMoveGoodness(playerArray: Array[Array[Int]], playerLocationMap: Map[Int, Coordinate],
                             currentPlayer: Int, moveCounter: Int): Map[Move, Int] = {
 
-    val width = playerArray.head.length
-    val height = playerArray.length
+    def getOutcomeUtility(preMoveLocationMap: Map[Int, Coordinate], outcome: MoveSequenceOutcome): Int = {
+      outcome match {
+        case EndedUpAtLocation(location, resultantArray) =>
+          val updatedLocationMap = (preMoveLocationMap - currentPlayer) + (currentPlayer -> location)
+          val playerToReachableCount: Map[Int, Int] =
+            GridRacer2.getPlayerReachableCounts(updatedLocationMap, (currentPlayer :: (preMoveLocationMap.keySet - currentPlayer).toList).toVector, resultantArray)
+          extractMyUtility(currentPlayer, playerToReachableCount)
+        case _ => Player.ReallyBadScore
+      }
+    }
 
     val playerLocation = playerLocationMap(currentPlayer)
 
-    val legalMoves = for (move <- Move.AllMoves;
-                          resultantLocation = playerLocation.applyMove(move)
-                          if resultantLocation.isWithin(width, height) && playerArray(resultantLocation.y)(resultantLocation.x) == GameGrid.EmptySpaceNumber
-    ) yield move
+    val moveSequencesOfLengthTwo: Set[List[Move]] = MoveSequenceGenerator.generateMoveSequences(2)
+
+    val moveSequenceResults: Map[List[Move], MoveSequenceOutcome] =
+      (for (moveSequence <- moveSequencesOfLengthTwo)
+        yield moveSequence -> MoveSequencer.computeSequenceResult(playerArray, playerLocation, moveSequence)).toMap
 
 
-    val moveOutcomes: Map[Move, MoveSequenceOutcome] =
-      (for (move <- legalMoves) yield move -> MoveSequencer.computeSequenceResult(playerArray, playerLocation, List(move))).toMap
+    val moveSequenceUtilities: Map[List[Move], Int] =
+      (for (moveSequence <- moveSequenceResults.keys) yield moveSequence -> getOutcomeUtility(playerLocationMap, moveSequenceResults(moveSequence))).toMap
 
-    val moveResultantArrays =
-      (for (move <- legalMoves;
-            outcome = moveOutcomes(move)) yield move ->
-        (
-          outcome match {
-            case EndedUpAtLocation(_, resultantArray) => resultantArray
-            case _ => sys.error("An illegal move was made.")
-          }
-          )).toMap
+    // Collect utilities
 
+    val maxUtilities = mutable.Map[Move, Int]()
 
-    val opponents: Set[Int] = playerLocationMap.keySet - currentPlayer
+    for (moveSequence <- moveSequenceUtilities.keys) {
+      val move = moveSequence.head
+      val utility = moveSequenceUtilities(moveSequence)
+      if (!maxUtilities.contains(move) || maxUtilities(move) < utility) {
+        maxUtilities(move) = utility
+      }
+    }
 
-    // Move -> Player -> Utility
-    val utilities: Map[Move, Map[Int, Int]] =
-      (for (move <- legalMoves;
-            playerRacingScores: Map[Int, Int] =
-              GridRacer2.getPlayerReachableCounts(
-                (playerLocationMap - currentPlayer) + (currentPlayer -> playerLocation.applyMove(move)),
-                (currentPlayer :: (playerLocationMap.keySet - currentPlayer).toList).toVector,
-                moveResultantArrays(move)
-              ))
-      yield move -> playerRacingScores).toMap
-
-    val myUtilities: Map[Move, Int] = (for (move <- legalMoves) yield move -> utilities(move)(currentPlayer)).toMap
-
-    val opponentUtilities: Map[Move, Int] = (for (move <- legalMoves) yield move -> (for (opponent <- opponents) yield utilities(move)(opponent)).sum).toMap
-
-
-    val moveScoreMap: Map[Move, Int] = (for (move <- legalMoves) yield move -> (myUtilities(move) - opponentUtilities(move))).toMap
-
-//    Console.err.println("Utilities code took " + (System.currentTimeMillis() - utilitiesStart) + " ms to run.")
-
-    moveScoreMap
-
-
+    // Filter out the awful moves
+    (for (move <- maxUtilities.keys if maxUtilities(move) > Player.ReallyBadScore) yield (move -> maxUtilities(move))).toMap
   }
 
 }
@@ -311,6 +311,24 @@ class GameGrid(width: Int, height: Int, arr: Array[Array[Int]]) {
 
     for (move <- Move.AllMoves if moveIsAvailable(move)) yield move
 
+  }
+
+}
+
+
+object MoveSequenceGenerator {
+
+  /**
+   * Generate move sequences that could be beneficial to the current player. Looks further ahead in certain sequences,
+   * for example a sequence of moves in a particular direction, or comprising a diagonal ladder.
+   * @param maximumNumberOfMoves the maximum length for the generated move sequences
+   * @return
+   */
+  def generateMoveSequences(maximumNumberOfMoves: Int): Set[List[Move]] = {
+
+    val set: Set[List[Move]] = for (move1 <- Move.AllMoves; move2 <- Move.AllMoves) yield List(move1, move2)
+
+    set
   }
 
 }
@@ -486,6 +504,15 @@ sealed abstract class Move {
       case Up() => Right()
       case Right() => Down()
       case Down() => Left()
+    }
+  }
+
+  def reverse: Move = {
+    this match {
+      case Left() => Right()
+      case Up() => Down()
+      case Right() => Left()
+      case Down() => Up()
     }
   }
 }

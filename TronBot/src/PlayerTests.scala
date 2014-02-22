@@ -214,7 +214,7 @@ class PlayerTests extends FlatSpec with Matchers {
     goodnessMap.keySet should be (Set(Right(), Down()))
   }
 
-  it should "find a move which immediately traps the player to be less desirable than one which does not" in {
+  it should "find a move which immediately traps the player to be unacceptable" in {
     val inputGrid = """ 0 -1 -1
                       |-1  3 -1
                       | 3  3 -1""".stripMargin
@@ -224,11 +224,7 @@ class PlayerTests extends FlatSpec with Matchers {
       playerLocationMap = Map(0 -> Coordinate(0, 0)),
       currentPlayer = 0, moveCounter = 100)
 
-    goodnessMap.keySet should be (Set(Right(), Down()))
-    val downGoodness: Int = goodnessMap(Down())
-    val rightGoodness: Int = goodnessMap(Right())
-
-    downGoodness should be < rightGoodness
+    goodnessMap.keySet should be (Set(Right()))
   }
 
   it should "find a move which traps an opponent to be more desirable than one which does not" in {
@@ -248,7 +244,7 @@ class PlayerTests extends FlatSpec with Matchers {
   }
 
   // TODO Fix this test by implementing 2-move lookahead
-  ignore should "find a move which cuts off a section of grid on the following move to be less desirable than one that does not" in {
+  it should "find a move which cuts off a section of grid on the following move to be less desirable than one that does not" in {
     val inputGrid =
       """-1 -1 -1  0 -1
         |-1 -1 -1  0 -1
@@ -346,6 +342,13 @@ class PlayerTests extends FlatSpec with Matchers {
 
     reachabilityScores should be (Map(0 -> 5, 2 -> 2))
 
+  }
+
+  "The move sequence generator" should "generate legal move sequences of size 1" in {
+
+    val sequences: Set[List[Move]] = MoveSequenceGenerator.generateMoveSequences(2)
+
+    sequences.size should be (16)
   }
 
   "The move sequencer" should "return the starting position when applying an empty list of moves" in {
