@@ -243,7 +243,6 @@ class PlayerTests extends FlatSpec with Matchers {
     goodnessMap(Down()) should be > goodnessMap(Right())
   }
 
-  // TODO Fix this test by implementing 2-move lookahead
   it should "find a move which cuts off a section of grid on the following move to be less desirable than one that does not" in {
     val inputGrid =
       """-1 -1 -1  0 -1
@@ -263,6 +262,29 @@ class PlayerTests extends FlatSpec with Matchers {
 
     downGoodness should be < leftGoodness
     // Maybe right is an acceptable move, as it makes maximum use of the rightmost column
+  }
+
+  it should "find a move which naively gets us trapped to be less desirable than one that does not" in {
+    val inputGrid =
+      """ 2  2  2  2  2
+        |-1 -1  0  0  0
+        |-1  0  0 -1 -1
+        |-1 -1 -1 -1 -1
+        |-1 -1 -1 -1 -1""".stripMargin
+
+    val goodnessMap: Map[Move, Int] = MoveAnalyser.determineMoveGoodness(
+      playerArray = arrayFromParsing(inputGrid),
+      playerLocationMap = Map(0 -> Coordinate(1, 2), 2 -> Coordinate(0, 0)),
+      currentPlayer = 0, moveCounter = 100)
+
+    goodnessMap.keySet should be (Set(Up(), Left(), Down()))
+    val upGoodness = goodnessMap(Up())
+    val leftGoodness = goodnessMap(Left())
+    val downGoodness = goodnessMap(Down())
+
+    upGoodness should be < leftGoodness
+    upGoodness should be < downGoodness
+
   }
 
   it should "prefer a move which increases the player's ability to reach cells before its opponent" in {

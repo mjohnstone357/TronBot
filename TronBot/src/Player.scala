@@ -31,24 +31,21 @@ object Player {
 
       // Pure stuff
 
-      val availableMoves: Set[Move] = gameGrid.getAvailableMoves(myPlayerNumber)
+      val playerLocations: mutable.Map[Int, Coordinate] = new mutable.HashMap[Int, Coordinate]()
+      for (playerInfo <- playerInfosThisTurn) {
+        playerInfo match {
+          case PlayerLocation(playerNumber, location, _) => playerLocations += playerNumber -> location
+          case _ => ()
+        }
+      }
 
-      if (availableMoves.isEmpty) {
+      val locationMap: Map[Int, Coordinate] = (for (x: (Int, Coordinate) <- playerLocations) yield x).toMap
+
+      val moveScorePairs: Set[(Move, Int)] = MoveAnalyser.determineMoveGoodness(gameGrid.array, locationMap, myPlayerNumber, moveCounter).toSet
+
+      if (moveScorePairs.isEmpty) {
         println("HALT")
       } else {
-
-        val playerLocations: mutable.Map[Int, Coordinate] = new mutable.HashMap[Int, Coordinate]()
-        for (playerInfo <- playerInfosThisTurn) {
-          playerInfo match {
-            case PlayerLocation(playerNumber, location, _) => playerLocations += playerNumber -> location
-            case _ => ()
-          }
-        }
-
-        val locationMap: Map[Int, Coordinate] = (for (x: (Int, Coordinate) <- playerLocations) yield x).toMap
-
-        val moveScorePairs: Set[(Move, Int)] = MoveAnalyser.determineMoveGoodness(gameGrid.array, locationMap, myPlayerNumber, moveCounter).toSet
-
         val maxScore = (for ((_, score) <- moveScorePairs) yield score).max
         val bestMoves: Set[Move] = for ((move, score) <- moveScorePairs if score == maxScore) yield move
 
@@ -58,11 +55,11 @@ object Player {
 
         writeMove(chosenMove)
 
-        moveCounter += 1
-
-        debug("Processed move in " + (System.currentTimeMillis() - timer) + " ms.")
+        moveCounter += 1 // TODO Remove moveCounter
 
       }
+
+      debug("Processed move in " + (System.currentTimeMillis() - timer) + " ms.")
 
     }
   }
@@ -155,7 +152,7 @@ object MoveAnalyser {
     }
 
     // Filter out the awful moves
-    (for (move <- maxUtilities.keys if maxUtilities(move) > Player.ReallyBadScore) yield (move -> maxUtilities(move))).toMap
+    (for (move <- maxUtilities.keys if maxUtilities(move) > Player.ReallyBadScore) yield move -> maxUtilities(move)).toMap
   }
 
 }
